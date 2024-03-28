@@ -1,7 +1,6 @@
 const path = require('path');
 const forge = require('node-forge');
 const { promises: fsPromises } = require('fs');
-const { Certificate } = require('crypto');
 
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
@@ -22,6 +21,7 @@ async function extractPrivateKey() {
       for (const safeBag of safeContents.safeBags) {
         if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag) {
           privateKey = forge.pki.privateKeyToPem(safeBag.key);
+          console.log('Private Key extracted');
           break;
         }
       }
@@ -39,7 +39,7 @@ async function extractPrivateKey() {
   }
 }
 
-async function extractCertificate() {
+async function extractPublicCertificate() {
   try {
     const pfxPassword = (await fsPromises.readFile(pfxPasswordPath, 'utf8')).trim();
     const pfx = await fsPromises.readFile(pfxPath);
@@ -55,13 +55,14 @@ async function extractCertificate() {
       console.error('No certificate found in PFX file.');
       return;
     }
+    console.log('Public Certificate extracted');
 
     let certPem = forge.pki.certificateToPem(certBag.cert);
     await fsPromises.writeFile(publicCertPath, certPem);
-    console.log('Certificate extracted');
+    console.log('Public Certificate has been saved successfully.');
   } catch (error) {
-    console.error('Failed to extract certificate from PFX:', error);
+    console.error('Failed to extract Public Certificate from PFX:', error);
   }
 }
 
-module.exports = { extractPrivateKey, extractCertificate };
+module.exports = { extractPrivateKey, extractPublicCertificate };

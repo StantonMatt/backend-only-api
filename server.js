@@ -2,13 +2,17 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-const runServer = function (dataObject) {
-  app.get('/', (req, res) => {
-    res.status(200).json(dataObject);
+function runServer(semObj, tokObj) {
+  app.get('/semilla', (req, res) => {
+    res.status(200).json(semObj);
+  });
+
+  app.get('/token', (req, res) => {
+    res.status(200).json(tokObj);
   });
 
   app.get('/xml', (req, res) => {
-    res.type('application/xml').status(200).send(dataObject.xmlString);
+    res.type('application/xml').status(200).send(semObj.xmlString);
   });
 
   app
@@ -23,6 +27,6 @@ const runServer = function (dataObject) {
         console.log(error);
       }
     });
-};
+}
 
 module.exports = { runServer };
