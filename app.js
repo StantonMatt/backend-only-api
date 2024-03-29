@@ -1,6 +1,7 @@
 console.clear();
 const { runServer } = require('./server.js');
 const { extractPrivateKey, extractPublicCertificate } = require('./extract-keys.js');
+const { SignXml, signXml } = require('./xml-signer.js');
 
 const { promises: fsPromises } = require('fs');
 const { SignedXml } = require('xml-crypto');
@@ -27,19 +28,19 @@ const sigData = {};
 const semObj = {};
 const tokObj = {};
 
-function populateSignatureData(privateKey, publicCert) {
-  Object.assign(sigData, {
-    privateKey,
-    publicCert,
-    canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
-    signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
-    references: {
-      xpath: `//*[local-name(.)='getToken']`,
-      digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
-      transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature'],
-    },
-  });
-}
+// function populateSignatureData(privateKey, publicCert) {
+//   Object.assign(sigData, {
+//     privateKey,
+//     publicCert,
+//     canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+//     signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
+//     references: {
+//       xpath: `//*[local-name(.)='getToken']`,
+//       digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
+//       transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature'],
+//     },
+//   });
+// }
 
 async function getSemilla() {
   try {
@@ -77,13 +78,20 @@ async function signSemillaXml() {
     const publicCert = await fsPromises.readFile(publicCertPath, 'utf8');
     const privateKey = await fsPromises.readFile(privateKeyPath, 'utf8');
 
-    populateSignatureData(privateKey, publicCert); // Add all data for signing to sigData Object
-    // Assign Algorithms and Values for signing
-    const sig = new SignedXml(sigData);
-    sig.addReference(sigData.references);
-    sig.computeSignature(semObj.xmlString);
+    const signedSemillaXml = await signXml(
+      privateKey,
+      publicCert,
+      'getToken',
+      semObj.xmlString
+    );
 
-    const signedSemillaXml = sig.getSignedXml(); // Get signed xml
+    // populateSignatureData(privateKey, publicCert); // Add all data for signing to sigData Object
+    // // Assign Algorithms and Values for signing
+    // const sig = new SignedXml(sigData);
+    // sig.addReference(sigData.references);
+    // sig.computeSignature(semObj.xmlString);
+
+    // const signedSemillaXml = sig.getSignedXml(); // Get signed xml
     await fsPromises.writeFile(signedSemillaPath, signedSemillaXml); // Save signed xml
 
     return signedSemillaXml;

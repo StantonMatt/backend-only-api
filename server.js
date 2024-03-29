@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-function runServer(semObj, tokObj) {
+function runServer(semObj, tokObj, xml) {
   app.get('/semilla', (req, res) => {
     res.status(200).json(semObj);
   });
@@ -12,7 +12,7 @@ function runServer(semObj, tokObj) {
   });
 
   app.get('/xml', (req, res) => {
-    res.type('application/xml').status(200).send(semObj.xmlString);
+    res.type('application/xml').status(200).send(xml);
   });
 
   app

@@ -1,190 +1,155 @@
+'use strict';
+
 const fs = require('fs-extra');
 const path = require('path');
 const { create } = require('xmlbuilder2');
 const { getClientData } = require('./database.js');
 const { runServer } = require('./server.js');
+const { getTodayDteFormattedDate, getExpiryDteFormattedDate } = require('./util.js');
 
 const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
+
 const TipoDTE = 39;
+const IndServicio = 2;
+const RznSocEmisor =
+  'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
+const GiroEmisor = 'Prestación de servicios sanitarios';
+const CmnaRecep = 'VILCUN';
+let dteCliente;
+
+function addDscRcg(NroLinDR, TpoMov, GlosaDR, TpoValor, ValorDR, IndExeDR) {
+  console.log(ValorDR);
+  dteCliente.DTE.Documento.DscRcgGlobal.push({
+    NroLinDR,
+    TpoMov,
+    GlosaDR,
+    TpoValor,
+    ValorDR,
+    IndExeDR,
+  });
+}
 
 async function buildClientDte() {
   try {
     const clientObject = await getClientData();
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
-    console.log(Folio);
-    for (let i = 0; i < 1; i++) {
-      DTE = {
-        Documento: {
-          Encabezado: {
-            IdDoc: {
-              TipoDTE,
-              Folio,
-              FchEmis: '2024-03-27',
-              IndServicio: 2,
-              // IndMntNeto: 2,
-              FchVenc: '2024-04-20',
+    for (let i = 0; i < 2; i++) {
+      const dtePath = path.join(__dirname, 'assets', 'temp', 'output', 'dtes', `dte${i}`);
+      let NroLinDR = 1;
+      dteCliente = {
+        DTE: {
+          Documento: {
+            Encabezado: {
+              IdDoc: {
+                TipoDTE,
+                Folio: Folio++,
+                FchEmis: getTodayDteFormattedDate().trim(),
+                IndServicio,
+                FchVenc: getExpiryDteFormattedDate().trim(),
+              },
+              Emisor: {
+                RUTEmisor: String(clientObject[0].RUTEmisor).toUpperCase().trim(),
+                RznSocEmisor,
+                GiroEmisor,
+              },
+              Receptor: {
+                RUTRecep: String(clientObject[i].RUTRecep).toUpperCase().trim(),
+                CdgIntRecep: String(clientObject[i].CdgIntRecep).trim(),
+                RznSocRecep: String(clientObject[i].RznSocRecep)
+                  .split(/\s+/)
+                  .join(' ')
+                  .trim(),
+                // Contacto: String(clientObject[i].contacto).trim(),
+                DirRecep: String(clientObject[i].DirRecep).split(/\s+/).join(' ').trim(),
+                CmnaRecep,
+                CiudadRecep: String(clientObject[i].CiudadRecep)
+                  .split(/\s+/)
+                  .join(' ')
+                  .trim(),
+              },
+              RUTProvSW: String(clientObject[0].RUTEmisor).toUpperCase().trim(),
+              Totales: {
+                MntNeto: Number(clientObject[i].MntNeto),
+                IVA: Number(clientObject[i].IVA),
+                MntTotal: Number(clientObject[i].MntTotal),
+                SaldoAnterior: Number(clientObject[i].SaldoAnterior),
+                VlrPagar: Number(clientObject[i].VlrPagar),
+              },
             },
-            Emisor: {
-              RUTEmisor: '12345678-9',
-              RznSocEmisor:
-                'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT',
-              GiroEmisor: 'Prestación de servicios sanitarios',
-            },
-            Receptor: {
-              RUTRecep: '98765432-1',
-              CdgIntRecep: '110070',
-              RznSocRecep: 'María Rivera',
-              Contacto: 'maria.rivera@example.com',
-              DirRecep: 'Las Araucarias 1234',
-              CmnaRecep: 'Vilcun',
-              CiudadRecep: 'General Lopez',
-            },
-            RUTProvSW: 'rutemisor',
-            Totales: {
-              MntNeto: 8900,
-              IVA: 1100,
-              MntTotal: 10000,
-              SaldoAnterior: 5555,
-              VlrPagar: 15555,
-            },
+            Detalle: [
+              {
+                NroLinDet: 1,
+                NmbItem: 'Agua',
+                DscItem: 'Consumo de Agua Potable',
+                QtyItem: Number(clientObject[i].ConsumoM3),
+                UnmdItem: 'Metros Cubicos',
+                PrcItem: Number(clientObject[i].CostoM3Agua),
+                MontoItem: Number(clientObject[i].CostoTotalAgua),
+              },
+              {
+                NroLinDet: 2,
+                NmbItem: 'Alcantarillado',
+                DscItem: 'Recoleccion de Aguas Servidas',
+                QtyItem: Number(clientObject[i].ConsumoM3),
+                UnmdItem: 'Metros Cubicos',
+                PrcItem: Number(clientObject[i].CostoM3Alcantarillado),
+                MontoItem: Number(clientObject[i].CostoTotalAlcantarillado),
+              },
+              {
+                NroLinDet: 3,
+                NmbItem: 'Tratamiento',
+                DscItem: 'Tratamiento de Aguas Servidas',
+                QtyItem: Number(clientObject[i].ConsumoM3),
+                UnmdItem: 'Metros Cubicos',
+                PrcItem: Number(clientObject[i].CostoM3Tratamiento),
+                MontoItem: Number(clientObject[i].CostoTotalTratamiento),
+              },
+              {
+                NroLinDet: 4,
+                NmbItem: 'Cargo Fijo',
+                QtyItem: 1,
+                PrcItem: Number(clientObject[i].CargoFijo),
+                MontoItem: Number(clientObject[i].CargoFijo),
+              },
+            ],
+            DscRcgGlobal: [],
           },
-          Detalle: [
-            {
-              NroLinDet: 1,
-              NmbItem: 'Agua',
-              DscItem: 'Consumo de Agua Potable',
-              QtyItem: 15,
-              UnmdItem: 'Metros Cubicos',
-              PrcItem: 470,
-              MontoItem: 7050,
-            },
-            {
-              NroLinDet: 2,
-              NmbItem: 'Alcantarillado',
-              DscItem: 'Recoleccion de Aguas Servidas',
-              QtyItem: 15,
-              UnmdItem: 'Metros Cubicos',
-              PrcItem: 470,
-              MontoItem: 7050,
-            },
-            {
-              NroLinDet: 3,
-              NmbItem: 'Tratamiento',
-              DscItem: 'Tratamiento de Aguas Servidas',
-              QtyItem: 15,
-              UnmdItem: 'Metros Cubicos',
-              PrcItem: 290,
-              MontoItem: 4350,
-            },
-            {
-              NroLinDet: 4,
-              NmbItem: 'Cargo Fijo',
-              QtyItem: 1,
-              PrcItem: 1500,
-              MontoItem: 5500,
-            },
-          ],
-          // DscRcgGlobal: [
-          //   {
-          //     NroLinDR: 1,
-          //     TpoMov: 'D(descuento) o R(recarga)',
-          //     GlosaDR: 'Descripcion del Descuento o Recargo',
-          //     TpoValor: '%(porcentaje) o $(monto)',
-          //     ValorDR: 5,
-          //   },
-          // ],
         },
       };
+      const Descuento = Number(clientObject[i].Descuento);
+      if (Descuento) {
+        addDscRcg(NroLinDR++, 'D', 'Descuento', '$', Descuento);
+      }
+      const Subsidio = Number(clientObject[i].Subsidio);
+      if (Subsidio) {
+        addDscRcg(NroLinDR++, 'D', 'Subsidio', '$', Subsidio, 1);
+      }
+      const Repactacion = Number(clientObject[i].Repactacion);
+      if (Repactacion) {
+        addDscRcg(NroLinDR++, 'R', 'Repactacion', '$', Repactacion, 1);
+      }
+      const Reposicion = Number(clientObject[i].Reposicion);
+      if (Reposicion) {
+        addDscRcg(NroLinDR++, 'R', 'Reposicion de Servicio', '$', Reposicion);
+      }
+      const Multa = Number(clientObject[i].Multa);
+      if (Multa) {
+        addDscRcg(NroLinDR++, 'R', 'Multa', '$', Multa);
+      }
+      const Otros = Number(clientObject[i].Otros);
+      if (Otros) {
+        addDscRcg(NroLinDR++, 'R', 'Otros', '$', Otros);
+      }
     }
-    runServer(DTE);
+    const doc = create({ version: '1.0', encoding: 'ISO-8859-1' }).ele(dteCliente);
+    const xmlString = doc.end({ prettyPrint: true });
+    console.log(xmlString);
+    runServer(clientObject[0], dteCliente, xmlString);
   } catch (error) {
-    console.log(error);
+    console.log(`XML build has failed: ${error}`);
   }
 }
 buildClientDte();
-
-const DTE = {
-  Documento: {
-    Encabezado: {
-      IdDoc: {
-        TipoDTE: 39,
-        Folio: 123456,
-        FchEmis: '2024-03-27',
-        IndServicio: 2,
-        // IndMntNeto: 2,
-        FchVenc: '2024-04-20',
-      },
-      Emisor: {
-        RUTEmisor: '12345678-9',
-        RznSocEmisor:
-          'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT',
-        GiroEmisor: 'Prestación de servicios sanitarios',
-      },
-      Receptor: {
-        RUTRecep: '98765432-1',
-        CdgIntRecep: '110070',
-        RznSocRecep: 'María Rivera',
-        Contacto: 'maria.rivera@example.com',
-        DirRecep: 'Las Araucarias 1234',
-        CmnaRecep: 'Vilcun',
-        CiudadRecep: 'General Lopez',
-      },
-      RUTProvSW: 'rutemisor',
-      Totales: {
-        MntNeto: 8900,
-        IVA: 1100,
-        MntTotal: 10000,
-        SaldoAnterior: 5555,
-        VlrPagar: 15555,
-      },
-    },
-    Detalle: [
-      {
-        NroLinDet: 1,
-        NmbItem: 'Agua',
-        DscItem: 'Consumo de Agua Potable',
-        QtyItem: 15,
-        UnmdItem: 'Metros Cubicos',
-        PrcItem: 470,
-        MontoItem: 7050,
-      },
-      {
-        NroLinDet: 2,
-        NmbItem: 'Alcantarillado',
-        DscItem: 'Recoleccion de Aguas Servidas',
-        QtyItem: 15,
-        UnmdItem: 'Metros Cubicos',
-        PrcItem: 470,
-        MontoItem: 7050,
-      },
-      {
-        NroLinDet: 3,
-        NmbItem: 'Tratamiento',
-        DscItem: 'Tratamiento de Aguas Servidas',
-        QtyItem: 15,
-        UnmdItem: 'Metros Cubicos',
-        PrcItem: 290,
-        MontoItem: 4350,
-      },
-      {
-        NroLinDet: 4,
-        NmbItem: 'Cargo Fijo',
-        QtyItem: 1,
-        PrcItem: 1500,
-        MontoItem: 5500,
-      },
-    ],
-    // DscRcgGlobal: [
-    //   {
-    //     NroLinDR: 1,
-    //     TpoMov: 'D(descuento) o R(recarga)',
-    //     GlosaDR: 'Descripcion del Descuento o Recargo',
-    //     TpoValor: '%(porcentaje) o $(monto)',
-    //     ValorDR: 5,
-    //   },
-    // ],
-  },
-};
 
 // TED: {
 //   DD: {
