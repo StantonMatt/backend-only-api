@@ -78,12 +78,7 @@ async function signSemillaXml() {
     const publicCert = await fsPromises.readFile(publicCertPath, 'utf8');
     const privateKey = await fsPromises.readFile(privateKeyPath, 'utf8');
 
-    const signedSemillaXml = await signXml(
-      privateKey,
-      publicCert,
-      'getToken',
-      semObj.xmlString
-    );
+    const signedSemillaXml = await signXml(privateKey, publicCert, 'getToken', semObj.xmlString);
 
     // populateSignatureData(privateKey, publicCert); // Add all data for signing to sigData Object
     // // Assign Algorithms and Values for signing

@@ -1,189 +1,254 @@
 'use strict';
 
 const fs = require('fs-extra');
+const xml2js = require('xml2js');
 const path = require('path');
 const { create } = require('xmlbuilder2');
+const { signXml } = require('./xml-signer.js');
 const { getClientData } = require('./database.js');
 const { runServer } = require('./server.js');
 const { getTodayDteFormattedDate, getExpiryDteFormattedDate } = require('./util.js');
 
 const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
+const cafPath = path.join(__dirname, 'assets', 'CAF.xml');
+const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
+const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 
-const TipoDTE = 39;
-const IndServicio = 2;
-const RznSocEmisor =
-  'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
-const GiroEmisor = 'Prestación de servicios sanitarios';
-const CmnaRecep = 'VILCUN';
-let dteCliente;
+const parser = new xml2js.Parser();
 
-function addDscRcg(NroLinDR, TpoMov, GlosaDR, TpoValor, ValorDR, IndExeDR) {
-  console.log(ValorDR);
-  dteCliente.DTE.Documento.DscRcgGlobal.push({
-    NroLinDR,
-    TpoMov,
-    GlosaDR,
-    TpoValor,
-    ValorDR,
-    IndExeDR,
+let dteClientData;
+
+function addDetalle(detalleObjectArray, NroLinDet, QtyItem, UnmdItem) {
+  detalleObjectArray.forEach(detalle => {
+    dteClientData.Detalle.push({
+      NroLinDet: NroLinDet++,
+      NmbItem: detalle.NmbItem,
+      DscItem: detalle.DscItem,
+      QtyItem: detalle.NmbItem === 'Cargo Fijo' ? 1 : QtyItem,
+      UnmdItem: detalle.NmbItem === 'Cargo Fijo' ? null : UnmdItem,
+      PrcItem: detalle.PrcItem,
+      MontoItem: detalle.MontoItem,
+    });
+  });
+}
+
+function addDscRcg(dscRcgObject, NroLinDR) {
+  dscRcgObject.forEach(dscRcg => {
+    if (dscRcg.ValorDR) {
+      dteClientData.DscRcgGlobal.push({
+        NroLinDR: NroLinDR++,
+        TpoMov: dscRcg.TpoMov,
+        GlosaDR: dscRcg.GlosaDR,
+        TpoValor: dscRcg.TpoValor,
+        ValorDR: dscRcg.ValorDR,
+        IndExeDR: dscRcg.IndExeDR,
+      });
+    }
   });
 }
 
 async function buildClientDte() {
   try {
-    const clientObject = await getClientData();
+    // Read the CAF.xml file to obtain the CAF  data
+    const cafFileContents = await fs.readFile(cafPath);
+    // Parse the CAF XML content into a JavaScript object for easier data manipulation
+    const cafParsedData = await parser.parseStringPromise(cafFileContents);
+    // Extract the 'DA' section from the CAF data, which contains authorization details
+    const daData = cafParsedData.AUTORIZACION.CAF[0].DA[0];
+
+    // Create a document out of DA values from CAF
+    const daDataDoc = create({ version: '1.0', encoding: 'ISO-8859-1' })
+      .ele('CAF', { version: '1.0' }) // Include version attribute as per CAF specification
+      .ele(daData); // Append the authorization details under the 'CAF' element
+
+    // Serialize the constructed XML document into a string with pretty formatting applied
+    const daDataXml = daDataDoc.end({ prettyPrint: true });
+
+    // Output the formatted XML string to the console for verification or debugging
+    console.log(daDataXml);
+
+    // Getting Digital Certificates(.pfx) for use in signing
+    const publicCert = await fs.readFile(publicCertPath, 'utf8');
+    const privateKey = await fs.readFile(privateKeyPath, 'utf8');
+    const excelDataObject = await getClientData();
+
+    let formattedSignedDteXml;
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
+    let dtePath;
     for (let i = 0; i < 2; i++) {
-      const dtePath = path.join(__dirname, 'assets', 'temp', 'output', 'dtes', `dte${i}`);
+      dtePath = path.join(__dirname, 'temp', 'output', 'dtes', `dte${i}.xml`);
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////DATA//////////////////////////////////////////////////////
       let NroLinDR = 1;
-      dteCliente = {
-        DTE: {
-          Documento: {
-            Encabezado: {
-              IdDoc: {
-                TipoDTE,
-                Folio: Folio++,
-                FchEmis: getTodayDteFormattedDate().trim(),
-                IndServicio,
-                FchVenc: getExpiryDteFormattedDate().trim(),
-              },
-              Emisor: {
-                RUTEmisor: String(clientObject[0].RUTEmisor).toUpperCase().trim(),
-                RznSocEmisor,
-                GiroEmisor,
-              },
-              Receptor: {
-                RUTRecep: String(clientObject[i].RUTRecep).toUpperCase().trim(),
-                CdgIntRecep: String(clientObject[i].CdgIntRecep).trim(),
-                RznSocRecep: String(clientObject[i].RznSocRecep)
-                  .split(/\s+/)
-                  .join(' ')
-                  .trim(),
-                // Contacto: String(clientObject[i].contacto).trim(),
-                DirRecep: String(clientObject[i].DirRecep).split(/\s+/).join(' ').trim(),
-                CmnaRecep,
-                CiudadRecep: String(clientObject[i].CiudadRecep)
-                  .split(/\s+/)
-                  .join(' ')
-                  .trim(),
-              },
-              RUTProvSW: String(clientObject[0].RUTEmisor).toUpperCase().trim(),
-              Totales: {
-                MntNeto: Number(clientObject[i].MntNeto),
-                IVA: Number(clientObject[i].IVA),
-                MntTotal: Number(clientObject[i].MntTotal),
-                SaldoAnterior: Number(clientObject[i].SaldoAnterior),
-                VlrPagar: Number(clientObject[i].VlrPagar),
-              },
-            },
-            Detalle: [
-              {
-                NroLinDet: 1,
-                NmbItem: 'Agua',
-                DscItem: 'Consumo de Agua Potable',
-                QtyItem: Number(clientObject[i].ConsumoM3),
-                UnmdItem: 'Metros Cubicos',
-                PrcItem: Number(clientObject[i].CostoM3Agua),
-                MontoItem: Number(clientObject[i].CostoTotalAgua),
-              },
-              {
-                NroLinDet: 2,
-                NmbItem: 'Alcantarillado',
-                DscItem: 'Recoleccion de Aguas Servidas',
-                QtyItem: Number(clientObject[i].ConsumoM3),
-                UnmdItem: 'Metros Cubicos',
-                PrcItem: Number(clientObject[i].CostoM3Alcantarillado),
-                MontoItem: Number(clientObject[i].CostoTotalAlcantarillado),
-              },
-              {
-                NroLinDet: 3,
-                NmbItem: 'Tratamiento',
-                DscItem: 'Tratamiento de Aguas Servidas',
-                QtyItem: Number(clientObject[i].ConsumoM3),
-                UnmdItem: 'Metros Cubicos',
-                PrcItem: Number(clientObject[i].CostoM3Tratamiento),
-                MontoItem: Number(clientObject[i].CostoTotalTratamiento),
-              },
-              {
-                NroLinDet: 4,
-                NmbItem: 'Cargo Fijo',
-                QtyItem: 1,
-                PrcItem: Number(clientObject[i].CargoFijo),
-                MontoItem: Number(clientObject[i].CargoFijo),
-              },
-            ],
-            DscRcgGlobal: [],
+      let NroLinDet = 1;
+      const TipoDTE = 39;
+      const FchEmis = getTodayDteFormattedDate();
+      const IndServicio = 2;
+      const FchVenc = getExpiryDteFormattedDate();
+
+      const RUTEmisor = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
+      const RznSocEmisor = 'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
+      const GiroEmisor = 'Prestación de servicios sanitarios';
+
+      const RUTRecep = String(excelDataObject[i].RUTRecep).toUpperCase().trim();
+      const CdgIntRecep = String(excelDataObject[i].CdgIntRecep).trim();
+      const RznSocRecep = String(excelDataObject[i].RznSocRecep).split(/\s+/).join(' ').trim();
+      // const Contacto = String(excelDataObject[i].contacto).trim();
+      const DirRecep = String(excelDataObject[i].DirRecep).split(/\s+/).join(' ').trim();
+      const CmnaRecep = 'VILCUN';
+      const CiudadRecep = String(excelDataObject[i].CiudadRecep).split(/\s+/).join(' ').trim();
+
+      const RUTProvSW = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
+
+      const MntNeto = Number(excelDataObject[i].MntNeto);
+      const IVA = Number(excelDataObject[i].IVA);
+      const MntTotal = Number(excelDataObject[i].MntTotal);
+      const SaldoAnterior = Number(excelDataObject[i].SaldoAnterior);
+      const VlrPagar = Number(excelDataObject[i].VlrPagar);
+
+      const Descuento = Number(excelDataObject[i].Descuento);
+      const Subsidio = Number(excelDataObject[i].Subsidio);
+      const Repactacion = Number(excelDataObject[i].Repactacion);
+      const Reposicion = Number(excelDataObject[i].Reposicion);
+      const Multa = Number(excelDataObject[i].Multa);
+      const Otros = Number(excelDataObject[i].Otros);
+
+      const QtyItem = Number(excelDataObject[i].ConsumoM3);
+      const UnmdItem = 'Metros Cubicos';
+      const detalleObject = [
+        {
+          NmbItem: 'Agua',
+          DscItem: 'Consumo de Agua Potable',
+          PrcItem: Number(excelDataObject[i].CostoM3Agua),
+          MontoItem: Number(excelDataObject[i].CostoTotalAgua),
+        },
+        {
+          NmbItemo: 'Alcantarillado',
+          DscItem: 'Recoleccion de Aguas Servidas',
+          PrcItem: Number(excelDataObject[i].CostoM3Alcantarillado),
+          MontoItem: Number(excelDataObject[i].CostoTotalAlcantarillado),
+        },
+        {
+          NmbItem: 'Tratamiento',
+          DscItem: 'Tratamiento de Aguas Servidas',
+          PrcItem: Number(excelDataObject[i].CostoM3Tratamiento),
+          MontoItem: Number(excelDataObject[i].CostoTotalTratamiento),
+        },
+        {
+          NmbItem: 'Cargo Fijo',
+          DscItem: 'Cargo Fijo',
+          PrcItem: Number(excelDataObject[i].CargoFijo),
+          MontoItem: Number(excelDataObject[i].CargoFijo),
+        },
+      ];
+
+      const dscRcgObject = [
+        { TpoMov: 'D', GlosaDR: 'Descuento', TpoValor: '$', ValorDR: Descuento },
+        { TpoMov: 'D', GlosaDR: 'Subsidio', TpoValor: '$', ValorDR: Subsidio, IndExeDR: 1 },
+        { TpoMov: 'R', GlosaDR: 'Repactacion', TpoValor: '$', ValorDR: Repactacion, IndExeDR: 1 },
+        { TpoMov: 'R', GlosaDR: 'Reposicion', TpoValor: '$', ValorDR: Reposicion },
+        { TpoMov: 'R', GlosaDR: 'Multa', TpoValor: '$', ValorDR: Multa },
+        { TpoMov: 'R', GlosaDR: 'Otros', TpoValor: '$', ValorDR: Otros },
+      ];
+
+      //////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////CLIENT DTE JSON//////////////////////////////////
+      dteClientData = {
+        Encabezado: {
+          IdDoc: {
+            TipoDTE,
+            Folio,
+            FchEmis,
+            IndServicio,
+            FchVenc,
+          },
+          Emisor: {
+            RUTEmisor,
+            RznSocEmisor,
+            GiroEmisor,
+          },
+          Receptor: {
+            RUTRecep,
+            CdgIntRecep,
+            RznSocRecep,
+            // Contacto,
+            DirRecep,
+            CmnaRecep,
+            CiudadRecep,
+          },
+          RUTProvSW,
+          Totales: {
+            MntNeto,
+            IVA,
+            MntTotal,
+            SaldoAnterior,
+            VlrPagar,
           },
         },
+        Detalle: [],
+        DscRcgGlobal: [],
       };
-      const Descuento = Number(clientObject[i].Descuento);
-      if (Descuento) {
-        addDscRcg(NroLinDR++, 'D', 'Descuento', '$', Descuento);
-      }
-      const Subsidio = Number(clientObject[i].Subsidio);
-      if (Subsidio) {
-        addDscRcg(NroLinDR++, 'D', 'Subsidio', '$', Subsidio, 1);
-      }
-      const Repactacion = Number(clientObject[i].Repactacion);
-      if (Repactacion) {
-        addDscRcg(NroLinDR++, 'R', 'Repactacion', '$', Repactacion, 1);
-      }
-      const Reposicion = Number(clientObject[i].Reposicion);
-      if (Reposicion) {
-        addDscRcg(NroLinDR++, 'R', 'Reposicion de Servicio', '$', Reposicion);
-      }
-      const Multa = Number(clientObject[i].Multa);
-      if (Multa) {
-        addDscRcg(NroLinDR++, 'R', 'Multa', '$', Multa);
-      }
-      const Otros = Number(clientObject[i].Otros);
-      if (Otros) {
-        addDscRcg(NroLinDR++, 'R', 'Otros', '$', Otros);
-      }
+      addDetalle(detalleObject, NroLinDet, QtyItem, UnmdItem);
+      addDscRcg(dscRcgObject, NroLinDR);
+
+      // Create a DTE (Documento Tributario Electrónico) document
+      const dteDocumentBuilder = create({ version: '1.0', encoding: 'ISO-8859-1' })
+        // Add the root element 'DTE' with its version attribute
+        .ele('DTE', { version: '1.0' })
+        // Add the 'Documento' element including RUTEmisor, TipoDTE and Folio
+        .ele('Documento', { ID: `DTE_${RUTEmisor.slice(0, RUTEmisor.indexOf('-'))}_T${TipoDTE}_F${Folio}` })
+        // Include the client-specific details into the 'Documento' element.
+        .ele(dteClientData);
+
+      // Convert the built document structure into a pretty-printed XML string.
+      const dteXmlString = dteDocumentBuilder.end({ prettyPrint: true });
+
+      // Sign DTE with private key and certificate targetting the 'Documento' element
+      const digitallySignedDteXml = await signXml(privateKey, publicCert, 'Documento', dteXmlString);
+
+      // Parse back into document structure then re-serialize to get propper formatting
+      formattedSignedDteXml = create({ version: '1.0', encoding: 'ISO-8859-1' }).ele(digitallySignedDteXml).end({ prettyPrint: true });
+
+      // Save the reformatted, signed DTE XML document to the file system for storage or further processing.
+      await fs.writeFile(dtePath, formattedSignedDteXml);
+
+      Folio++;
     }
-    const doc = create({ version: '1.0', encoding: 'ISO-8859-1' }).ele(dteCliente);
-    const xmlString = doc.end({ prettyPrint: true });
-    console.log(xmlString);
-    runServer(clientObject[0], dteCliente, xmlString);
+    runServer(excelDataObject[0], cafParsedData, formattedSignedDteXml);
   } catch (error) {
     console.log(`XML build has failed: ${error}`);
   }
 }
 buildClientDte();
-
-// TED: {
-//   DD: {
-//     RE: '12345678-9',
-//     TD: 39,
-//     F: 123456,
-//     FE: '2024-03-27',
-//     RR: '98765432-1',
-//     RSR: 'María Rivera',
-//     MNT: 10000,
-//     IT1: 'Abastecimiento de Agua Potable',
-//     CAF: {
-//       DA: {
-//         RE: '12345678-9',
-//         RS: 'COOPERATIVA DE SERVICIO DE ABASTECIMIENT',
-//         TD: 39,
-//         RNG: {
-//           D: 2645,
-//           H: 22644,
-//         },
-//         FA: '2024-03-27',
-//         RSAPK: {
-//           M: 'Clave Publica RSA del Solicitante: Modulo RSA',
-//           E: 'Clave Publica RSA del Solicitante: Exponente RSA',
-//         },
-//         IDK: 100,
-//       },
-//       // FRMA: 'Firma Digital (RSA) del SII Sobre DA', base="xs:base64Binary", name="algoritmo", type="xs:string", use="required", fixed="SHA1withRSA",
-//     },
-//     TSTED: '2024-03-27T12:00:00',
-//   },
-//   // FRMT: { "Valor de Firma Digital  sobre DD"
-//   //   algoritmo: 'SHA1withRSA',
-//   //   valor: 'xxxx',
-//   // },
-// },
-// TmstFirma: 'AAAA-MM-DDTHH:MI:SS',
+const ted = {
+  DD: {
+    RE: '12345678-9',
+    TD: 39,
+    F: 123456,
+    FE: '2024-03-27',
+    RR: '98765432-1',
+    RSR: 'María Rivera',
+    MNT: 10000,
+    IT1: 'Abastecimiento de Agua Potable',
+    CAF: {
+      DA: {
+        RE: '12345678-9',
+        RS: 'COOPERATIVA DE SERVICIO DE ABASTECIMIENT',
+        TD: 39,
+        RNG: {
+          D: 2645,
+          H: 22644,
+        },
+        FA: '2024-03-27',
+        RSAPK: {
+          M: 'Clave Publica RSA del Solicitante: Modulo RSA',
+          E: 'Clave Publica RSA del Solicitante: Exponente RSA',
+        },
+        IDK: 100,
+      },
+    },
+    TSTED: '2024-03-27T12:00:00',
+  },
+};
+// FRMA: 'Firma Digital (RSA) del SII Sobre DA', base="xs:base64Binary", name="algoritmo", type="xs:string", use="required", fixed="SHA1withRSA",
