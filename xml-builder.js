@@ -7,7 +7,7 @@ const { create } = require('xmlbuilder2');
 const { signXml } = require('./xml-signer.js');
 const { getClientData } = require('./database.js');
 const { runServer } = require('./server.js');
-const { getTodayDteFormattedDate, getExpiryDteFormattedDate } = require('./util.js');
+const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util.js');
 
 const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
 const cafPath = path.join(__dirname, 'assets', 'CAF.xml');
@@ -64,14 +64,12 @@ async function buildClientDte() {
     // Serialize the constructed XML document into a string with pretty formatting applied
     const daDataXml = daDataDoc.end({ prettyPrint: true });
 
-    // Output the formatted XML string to the console for verification or debugging
-    console.log(daDataXml);
-
     // Getting Digital Certificates(.pfx) for use in signing
     const publicCert = await fs.readFile(publicCertPath, 'utf8');
     const privateKey = await fs.readFile(privateKeyPath, 'utf8');
     const excelDataObject = await getClientData();
 
+    let ted;
     let formattedSignedDteXml;
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
     let dtePath;
@@ -80,6 +78,8 @@ async function buildClientDte() {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //////////////////////////////////////////////////////DATA//////////////////////////////////////////////////////
+      const TSTED = getTedFormattedTimeStamp();
+
       let NroLinDR = 1;
       let NroLinDet = 1;
       const TipoDTE = 39;
@@ -153,6 +153,41 @@ async function buildClientDte() {
       ];
 
       //////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////CLIENT TED JSON//////////////////////////////////
+      ted = {
+        DD: {
+          RE: RUTEmisor,
+          TD: TipoDTE,
+          F: Folio,
+          FE: FchEmis,
+          RR: RUTRecep,
+          RSR: RznSocRecep,
+          MNT: MntTotal,
+          IT1: detalleObject[0].DscItem,
+          // CAF: {
+          //   DA: {
+          //     RE: '12345678-9',
+          //     RS: 'COOPERATIVA DE SERVICIO DE ABASTECIMIENT',
+          //     TD: 39,
+          //     RNG: {
+          //       D: 2645,
+          //       H: 22644,
+          //     },
+          //     FA: '2024-03-27',
+          //     RSAPK: {
+          //       M: 'Clave Publica RSA del Solicitante: Modulo RSA',
+          //       E: 'Clave Publica RSA del Solicitante: Exponente RSA',
+          //     },
+          //     IDK: 100,
+          //   },
+          // },
+        },
+      };
+      // FRMA: 'Firma Digital (RSA) del SII Sobre DA', base="xs:base64Binary", name="algoritmo", type="xs:string", use="required", fixed="SHA1withRSA",
+      ted.DD.CAF = daData;
+      ted.DD.TSTED = TSTED;
+      console.log(ted);
+      //////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////CLIENT DTE JSON//////////////////////////////////
       dteClientData = {
         Encabezado: {
@@ -215,40 +250,9 @@ async function buildClientDte() {
 
       Folio++;
     }
-    runServer(excelDataObject[0], cafParsedData, formattedSignedDteXml);
+    runServer(excelDataObject[0], ted, daDataXml);
   } catch (error) {
     console.log(`XML build has failed: ${error}`);
   }
 }
 buildClientDte();
-const ted = {
-  DD: {
-    RE: '12345678-9',
-    TD: 39,
-    F: 123456,
-    FE: '2024-03-27',
-    RR: '98765432-1',
-    RSR: 'María Rivera',
-    MNT: 10000,
-    IT1: 'Abastecimiento de Agua Potable',
-    CAF: {
-      DA: {
-        RE: '12345678-9',
-        RS: 'COOPERATIVA DE SERVICIO DE ABASTECIMIENT',
-        TD: 39,
-        RNG: {
-          D: 2645,
-          H: 22644,
-        },
-        FA: '2024-03-27',
-        RSAPK: {
-          M: 'Clave Publica RSA del Solicitante: Modulo RSA',
-          E: 'Clave Publica RSA del Solicitante: Exponente RSA',
-        },
-        IDK: 100,
-      },
-    },
-    TSTED: '2024-03-27T12:00:00',
-  },
-};
-// FRMA: 'Firma Digital (RSA) del SII Sobre DA', base="xs:base64Binary", name="algoritmo", type="xs:string", use="required", fixed="SHA1withRSA",
