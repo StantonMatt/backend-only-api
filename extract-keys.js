@@ -65,4 +65,37 @@ async function extractPublicCertificate() {
   }
 }
 
-module.exports = { extractPrivateKey, extractPublicCertificate };
+async function extractPublicKey() {
+  try {
+    // Load the certificate
+    const certPem = await fsPromises.readFile(publicCertPath, 'utf8');
+    const certificate = forge.pki.certificateFromPem(certPem);
+
+    // Extract the public key from the certificate
+    return certificate.publicKey;
+  } catch (error) {
+    console.log(`Error extracting Public Key: ${error}`);
+  }
+}
+
+async function extractModulus() {
+  try {
+    const publicKey = await extractPublicKey();
+    const modulusBuffer = Buffer.from(publicKey.n.toByteArray());
+    return modulusBuffer.toString('base64');
+  } catch (error) {
+    console.log(`Error extracting Modulus: ${error}`);
+  }
+}
+
+async function extractExponent() {
+  try {
+    const publicKey = await extractPublicKey();
+    const modulusBuffer = Buffer.from(publicKey.e.toByteArray());
+    return modulusBuffer.toString('base64');
+  } catch (error) {
+    console.log(`Error extracting Exponent: ${error}`);
+  }
+}
+
+module.exports = { extractPrivateKey, extractPublicCertificate, extractModulus, extractExponent };

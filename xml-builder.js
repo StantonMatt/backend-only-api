@@ -3,8 +3,11 @@
 const fs = require('fs-extra');
 const xml2js = require('xml2js');
 const path = require('path');
-const { create } = require('xmlbuilder2');
-const { signXml } = require('./xml-signer.js');
+const crypto = require('crypto');
+const { SignedXml } = require('xml-crypto');
+const { builder, create, convert } = require('xmlbuilder2');
+const { signXml, signTed } = require('./xml-signer.js');
+const { extractModulus, extractExponent } = require('./extract-keys.js');
 const { getClientData } = require('./database.js');
 const { runServer } = require('./server.js');
 const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util.js');
@@ -49,31 +52,88 @@ function addDscRcg(dscRcgObject, NroLinDR) {
 
 async function buildClientDte() {
   try {
+    const excelDataObject = await getClientData();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////FIXED DATA//////////////////////////////////////////////////////
+
+    const RUTEmisor = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
+    const RznSocEmisor = 'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
+    const GiroEmisor = 'Prestación de servicios sanitarios';
+    const TipoDTE = 39;
+    const IndServicio = 2;
+    const RUTProvSW = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
+    const RutEnvia = '5657540-5';
+    const RutReceptor = '60803000-K';
+    const FchResol = '30-12-2020';
+    const NroResol = 0;
+    const TmstFirmaEnv = getTedFormattedTimeStamp();
+    const TpoDTE = TipoDTE;
+    let NroDTE = 0;
+    for (const [_, number] of excelDataObject.entries()) {
+      NroDTE++;
+      if (!number.Numero) break;
+    }
+    console.log(NroDTE);
+
+    let dteSobreObject = {
+      //   <?xml version="1.0" encoding="ISO-8859-1"?>
+      // <EnvioDTE xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sii.cl/SiiDte EnvioDTE_v10.xsd" version="1.0" xmlns="http://www.sii.cl/SiiDte">
+      //     <SetDTE ID="FENV010">
+      //         <Caratula version="1.0">
+      Caratula: {
+        '@version': '1.0',
+        RutEmisor: RUTEmisor,
+        RutEnvia,
+        RutReceptor,
+        FchResol,
+        NroResol,
+        TmstFirmaEnv,
+        SubTotDTE: {
+          TpoDTE,
+          NroDTE,
+        },
+      },
+    };
+
     // Read the CAF.xml file to obtain the CAF  data
     const cafFileContents = await fs.readFile(cafPath);
     // Parse the CAF XML content into a JavaScript object for easier data manipulation
     const cafParsedData = await parser.parseStringPromise(cafFileContents);
-    // Extract the 'DA' section from the CAF data, which contains authorization details
+    // Extract the 'DA' section from the CAF data
     const daData = cafParsedData.AUTORIZACION.CAF[0].DA[0];
 
-    // Create a document out of DA values from CAF
-    const daDataDoc = create({ version: '1.0', encoding: 'ISO-8859-1' })
-      .ele('CAF', { version: '1.0' }) // Include version attribute as per CAF specification
-      .ele(daData); // Append the authorization details under the 'CAF' element
+    // Extract the 'FRMA' section from the CAF data
+    const frmaData = cafParsedData.AUTORIZACION.CAF[0].FRMA[0]._;
+    // Format manually with signature algorithm and parse to Object
+    const frmaObject = convert(`<FRMA algoritmo="Sha1withRSA">${frmaData}</FRMA>`, { format: 'object' });
 
-    // Serialize the constructed XML document into a string with pretty formatting applied
-    const daDataXml = daDataDoc.end({ prettyPrint: true });
+    // Combine DA and FRMA
+    const mergedDaFrmaObjects = { DA: { ...daData }, ...frmaObject };
+    // // Create CAF doc and adding CAF(version 1.0) element
+    const cafDoc = create().ele('CAF', { version: '1.0' }).ele(mergedDaFrmaObjects);
+    // Parse back to Object
+    const cafObject = cafDoc.end({ format: 'object' });
 
-    // Getting Digital Certificates(.pfx) for use in signing
+    // Getting keys from Digital Certificates(.pfx) for use in signing
     const publicCert = await fs.readFile(publicCertPath, 'utf8');
     const privateKey = await fs.readFile(privateKeyPath, 'utf8');
-    const excelDataObject = await getClientData();
+    const modulus = await extractModulus();
+    const exponent = await extractExponent();
 
+    // Extract Private Key from CAF.xml
+    const cafPrivateKey = cafParsedData.AUTORIZACION.RSASK[0];
+
+    let allDtes = '';
+    let testObject;
+    let testTedXml;
+    let digitallySignedTedXml;
+    let tedXml;
     let ted;
     let formattedSignedDteXml;
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
     let dtePath;
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 4; i++) {
       dtePath = path.join(__dirname, 'temp', 'output', 'dtes', `dte${i}.xml`);
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,14 +142,9 @@ async function buildClientDte() {
 
       let NroLinDR = 1;
       let NroLinDet = 1;
-      const TipoDTE = 39;
-      const FchEmis = getTodayDteFormattedDate();
-      const IndServicio = 2;
-      const FchVenc = getExpiryDteFormattedDate();
 
-      const RUTEmisor = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
-      const RznSocEmisor = 'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
-      const GiroEmisor = 'Prestación de servicios sanitarios';
+      const FchEmis = getTodayDteFormattedDate();
+      const FchVenc = getExpiryDteFormattedDate();
 
       const RUTRecep = String(excelDataObject[i].RUTRecep).toUpperCase().trim();
       const CdgIntRecep = String(excelDataObject[i].CdgIntRecep).trim();
@@ -98,8 +153,6 @@ async function buildClientDte() {
       const DirRecep = String(excelDataObject[i].DirRecep).split(/\s+/).join(' ').trim();
       const CmnaRecep = 'VILCUN';
       const CiudadRecep = String(excelDataObject[i].CiudadRecep).split(/\s+/).join(' ').trim();
-
-      const RUTProvSW = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
 
       const MntNeto = Number(excelDataObject[i].MntNeto);
       const IVA = Number(excelDataObject[i].IVA);
@@ -164,29 +217,12 @@ async function buildClientDte() {
           RSR: RznSocRecep,
           MNT: MntTotal,
           IT1: detalleObject[0].DscItem,
-          // CAF: {
-          //   DA: {
-          //     RE: '12345678-9',
-          //     RS: 'COOPERATIVA DE SERVICIO DE ABASTECIMIENT',
-          //     TD: 39,
-          //     RNG: {
-          //       D: 2645,
-          //       H: 22644,
-          //     },
-          //     FA: '2024-03-27',
-          //     RSAPK: {
-          //       M: 'Clave Publica RSA del Solicitante: Modulo RSA',
-          //       E: 'Clave Publica RSA del Solicitante: Exponente RSA',
-          //     },
-          //     IDK: 100,
-          //   },
-          // },
         },
       };
       // FRMA: 'Firma Digital (RSA) del SII Sobre DA', base="xs:base64Binary", name="algoritmo", type="xs:string", use="required", fixed="SHA1withRSA",
-      ted.DD.CAF = daData;
+      ted.DD.CAF = cafObject.CAF;
       ted.DD.TSTED = TSTED;
-      console.log(ted);
+
       //////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////CLIENT DTE JSON//////////////////////////////////
       dteClientData = {
@@ -227,6 +263,24 @@ async function buildClientDte() {
       addDetalle(detalleObject, NroLinDet, QtyItem, UnmdItem);
       addDscRcg(dscRcgObject, NroLinDR);
 
+      // Create a document out of the ted object with CAF inserted
+      const tedString = create().ele(ted).toString();
+      // Convert node into its string representation
+      // const tedString = tedDoc.toString();
+      // Create signer
+      const tedSigner = crypto.createSign('RSA-SHA256').update(tedString);
+      // Update the Sign content with Ted string
+      // tedSigner.update(tedString);
+      const tedSignature = tedSigner.sign(cafPrivateKey, 'base64');
+      const signedTedString = '<TED version="1.0">' + tedString + `<FRMT algoritmo="SHA1withRSA">${tedSignature}</FRMT></TED>`;
+
+      const signedTedObject = create().ele(signedTedString).end({ format: 'object' });
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const dteTedObject = { ...dteClientData, ...signedTedObject, TmstFirma: TSTED };
       // Create a DTE (Documento Tributario Electrónico) document
       const dteDocumentBuilder = create({ version: '1.0', encoding: 'ISO-8859-1' })
         // Add the root element 'DTE' with its version attribute
@@ -234,23 +288,34 @@ async function buildClientDte() {
         // Add the 'Documento' element including RUTEmisor, TipoDTE and Folio
         .ele('Documento', { ID: `DTE_${RUTEmisor.slice(0, RUTEmisor.indexOf('-'))}_T${TipoDTE}_F${Folio}` })
         // Include the client-specific details into the 'Documento' element.
-        .ele(dteClientData);
-
-      // Convert the built document structure into a pretty-printed XML string.
-      const dteXmlString = dteDocumentBuilder.end({ prettyPrint: true });
+        .ele(dteTedObject);
+      // Convert the built document structure into a formatted XML string.
+      const dteXml = dteDocumentBuilder.end({ prettyPrint: true });
 
       // Sign DTE with private key and certificate targetting the 'Documento' element
-      const digitallySignedDteXml = await signXml(privateKey, publicCert, 'Documento', dteXmlString);
-
+      const signedDteXml = await signXml('Documento', dteXml, privateKey, publicCert, modulus, exponent);
+      const signedDteObject = convert({ encoding: 'UTF-8' }, signedDteXml, { format: 'object' });
+      const signedDteString = create().ele(signedDteObject).toString();
+      // const stringDte = signedDteXml.toString()
       // Parse back into document structure then re-serialize to get propper formatting
-      formattedSignedDteXml = create({ version: '1.0', encoding: 'ISO-8859-1' }).ele(digitallySignedDteXml).end({ prettyPrint: true });
-
+      allDtes += signedDteString;
+      formattedSignedDteXml = create({ version: '1.0', encoding: 'ISO-8859-1' }).ele(signedDteXml).end({ prettyPrint: true });
       // Save the reformatted, signed DTE XML document to the file system for storage or further processing.
       await fs.writeFile(dtePath, formattedSignedDteXml);
 
       Folio++;
     }
-    runServer(excelDataObject[0], ted, daDataXml);
+
+    // const signedDteObject = create().ele(digitallySignedTedXml);
+    // console.log(digitallySignedTedXml);
+
+    // console.log(digitallySignedTedXml);
+    // console.log('............');
+    // console.log(allDtes);
+    allDtes = '<master>' + allDtes + '</master>';
+    // const allDteDoc = create().ele(allDtes).end({ prettyPrint: true });
+    // console.log(allDteDoc);
+    runServer(excelDataObject[0], testObject, allDtes);
   } catch (error) {
     console.log(`XML build has failed: ${error}`);
   }
