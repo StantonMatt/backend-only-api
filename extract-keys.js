@@ -1,6 +1,6 @@
 const path = require('path');
 const forge = require('node-forge');
-const { promises: fsPromises } = require('fs');
+const fs = require('fs-extra');
 
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
@@ -9,8 +9,8 @@ const pfxPasswordPath = path.join(__dirname, 'assets', 'clave_certificado.txt');
 
 async function extractPrivateKey() {
   try {
-    const pfxFile = await fsPromises.readFile(pfxPath);
-    const pfxPassword = (await fsPromises.readFile(pfxPasswordPath, 'utf8')).trim();
+    const pfxFile = await fs.readFile(pfxPath);
+    const pfxPassword = (await fs.readFile(pfxPasswordPath, 'utf8')).trim();
 
     const p12Asn1 = forge.asn1.fromDer(pfxFile.toString('binary'));
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, pfxPassword);
@@ -29,7 +29,7 @@ async function extractPrivateKey() {
     }
 
     if (privateKey) {
-      await fsPromises.writeFile(privateKeyPath, privateKey);
+      await fs.writeFile(privateKeyPath, privateKey);
       console.log('Private key has been saved successfully.');
     } else {
       console.log('Private key not found in the .pfx file.');
@@ -41,8 +41,8 @@ async function extractPrivateKey() {
 
 async function extractPublicCertificate() {
   try {
-    const pfxPassword = (await fsPromises.readFile(pfxPasswordPath, 'utf8')).trim();
-    const pfx = await fsPromises.readFile(pfxPath);
+    const pfxPassword = (await fs.readFile(pfxPasswordPath, 'utf8')).trim();
+    const pfx = await fs.readFile(pfxPath);
 
     // Directly use the Buffer from readFile without Base64 decoding
     const p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfx.toString('binary')));
@@ -58,23 +58,10 @@ async function extractPublicCertificate() {
     console.log('Public Certificate extracted');
 
     let certPem = forge.pki.certificateToPem(certBag.cert);
-    await fsPromises.writeFile(publicCertPath, certPem);
+    await fs.writeFile(publicCertPath, certPem);
     console.log('Public Certificate has been saved successfully.');
   } catch (error) {
     console.error('Failed to extract Public Certificate from PFX:', error);
-  }
-}
-
-async function extractPublicKey() {
-  try {
-    // Load the certificate
-    const certPem = await fsPromises.readFile(publicCertPath, 'utf8');
-    const certificate = forge.pki.certificateFromPem(certPem);
-
-    // Extract the public key from the certificate
-    return certificate.publicKey;
-  } catch (error) {
-    console.log(`Error extracting Public Key: ${error}`);
   }
 }
 
@@ -95,6 +82,19 @@ async function extractExponent() {
     return modulusBuffer.toString('base64');
   } catch (error) {
     console.log(`Error extracting Exponent: ${error}`);
+  }
+}
+
+async function extractPublicKey() {
+  try {
+    // Load the certificate
+    const certPem = await fs.readFile(publicCertPath, 'utf8');
+    const certificate = forge.pki.certificateFromPem(certPem);
+
+    // Extract the public key from the certificate
+    return certificate.publicKey;
+  } catch (error) {
+    console.log(`Error extracting Public Key: ${error}`);
   }
 }
 

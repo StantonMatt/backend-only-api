@@ -1,12 +1,7 @@
 const XLSX = require('xlsx');
 const path = require('path');
-const { runServer } = require('./server.js');
 
-const excelDataPath = path.join(
-  __dirname,
-  'database',
-  '02-2024 PLANILLA vencto 20-03-2024.xlsx'
-);
+const excelDataPath = path.join(__dirname, 'database', '02-2024 PLANILLA vencto 20-03-2024.xlsx');
 
 async function getClientData() {
   try {

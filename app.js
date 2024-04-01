@@ -1,16 +1,14 @@
 console.clear();
-const { runServer } = require('./server.js');
+const { buildClientDte } = require('./xml-builder.js');
+const { signXml } = require('./xml-signer.js');
 const { extractPrivateKey, extractPublicCertificate } = require('./extract-keys.js');
-const { SignXml, signXml } = require('./xml-signer.js');
 
-const { promises: fsPromises } = require('fs');
-const { SignedXml } = require('xml-crypto');
-const xmlFormatter = require('xml-formatter');
+const fs = require('fs-extra');
 const axios = require('axios');
+const { create } = require('xmlbuilder2');
 const xml2js = require('xml2js');
 const path = require('path');
 
-const semillaXmlPath = path.join(__dirname, 'temp', 'output', 'semilla.xml');
 const signedSemillaPath = path.join(__dirname, 'temp', 'output', 'signed_semilla.xml');
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
@@ -20,31 +18,19 @@ const parser = new xml2js.Parser();
 //////////////////////////////////////////
 /////////////API ENDPOINTS////////////////
 const baseUrl = 'https://apicert.sii.cl/recursos/v1';
+const baseUrl2 = 'https://pangal.sii.cl/recursos/v1';
 const semillaUrl = '/boleta.electronica.semilla';
 const tokenUrl = '/boleta.electronica.token';
+const envioUrl = '/boleta.electronica.envio';
 //////////////////////////////////////////
 //////////////////////////////////////////
-const sigData = {};
 const semObj = {};
 const tokObj = {};
-
-// function populateSignatureData(privateKey, publicCert) {
-//   Object.assign(sigData, {
-//     privateKey,
-//     publicCert,
-//     canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
-//     signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
-//     references: {
-//       xpath: `//*[local-name(.)='getToken']`,
-//       digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
-//       transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature'],
-//     },
-//   });
-// }
 
 async function getSemilla() {
   try {
     const response = await axios.get(`${baseUrl}${semillaUrl}`);
+    console.log(`Semilla request success...`);
     return response.data;
   } catch (error) {
     console.log(`Error fetching seed: ${error}`);
@@ -61,10 +47,7 @@ async function processSemillaResponse() {
     semObj.estado = semObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_HDR'][0].ESTADO[0]; // Get Estado
     semObj.xmlString = `${semObj.xmlVersion}\n<getToken><item><Semilla>${semObj.semilla}</Semilla></item></getToken>`; // Create XML String
 
-    console.log(`Semilla extracted: ${semObj.semilla}`);
-
-    await fsPromises.writeFile(semillaXmlPath, semObj.xmlString.trim()); // Write XML file
-    console.log(`semilla.xml has been saved successfully.`);
+    console.log(`Semilla value extracted: ${semObj.semilla}`);
   } catch (error) {
     console.error('Error processing semilla response:', error);
   }
@@ -75,23 +58,16 @@ async function signSemillaXml() {
     await processSemillaResponse();
     await extractPrivateKey();
     await extractPublicCertificate();
-    const publicCert = await fsPromises.readFile(publicCertPath, 'utf8');
-    const privateKey = await fsPromises.readFile(privateKeyPath, 'utf8');
+    const publicCert = await fs.readFile(publicCertPath, 'utf8');
+    const privateKey = await fs.readFile(privateKeyPath, 'utf8');
 
     const signedSemillaXml = await signXml('getToken', semObj.xmlString, privateKey, publicCert);
 
-    // populateSignatureData(privateKey, publicCert); // Add all data for signing to sigData Object
-    // // Assign Algorithms and Values for signing
-    // const sig = new SignedXml(sigData);
-    // sig.addReference(sigData.references);
-    // sig.computeSignature(semObj.xmlString);
-
-    // const signedSemillaXml = sig.getSignedXml(); // Get signed xml
-    await fsPromises.writeFile(signedSemillaPath, signedSemillaXml); // Save signed xml
-
+    await fs.writeFile(signedSemillaPath, signedSemillaXml); // Save signed xml
+    console.error(`Semilla signing success...`);
     return signedSemillaXml;
   } catch (error) {
-    console.error(`Certificate signing failed: ${error}`);
+    console.error(`Semilla signing failed: ${error}`);
   }
 }
 
@@ -101,6 +77,7 @@ async function getToken() {
     const response = await axios.post(`${baseUrl}${tokenUrl}`, signedSemillaXml, {
       headers: { 'Content-Type': 'application/xml' },
     });
+    console.log('Token request success...');
     return response.data;
   } catch (error) {
     console.log('Token post request failed:', error);
@@ -116,14 +93,31 @@ async function processTokenResponse() {
     tokObj.estado = tokObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_HDR'][0].ESTADO[0]; // Get Estado
     tokObj.xmlString = `${tokObj.xmlVersion}\n<getToken><item><Semilla>${tokObj.semilla}</Semilla></item></getToken>`; // Create XML String
 
-    console.log(`Token extracted: ${tokObj.token}`);
-
-    // await fsPromises.writeFile(semillaXmlPath, tokObj.xmlString.trim()); // Write XML file
-    // console.log(`semilla.xml has been saved successfully.`);
-    runServer(semObj, tokObj);
+    console.log(`Token value extracted: ${tokObj.token}`);
   } catch (error) {
     console.error('Error processing token response:', error);
   }
 }
 
-processTokenResponse();
+async function postBoletas() {
+  try {
+    await processTokenResponse();
+    const boletaForm = await buildClientDte();
+    const response = await axios.post(`${baseUrl2}${envioUrl}`, boletaForm, {
+      headers: {
+        ...boletaForm.getHeaders(),
+        Cookie: `TOKEN=${tokObj}`,
+        'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT)',
+      },
+    });
+    console.log('---------------------------');
+    console.log('---------------------------');
+    console.log('Submission Successful:\n', response.data);
+    console.log('Headers:\n', response.headers);
+  } catch (error) {
+    console.log(error);
+    console.error('Submission Error:', error.response ? error.response.data : error.message);
+  }
+}
+
+postBoletas();

@@ -9,10 +9,12 @@ async function signXml(tag, xmlString, privateKey, publicCert, modulus, exponent
   const certPem = publicCert.toString().replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').trim();
   sig.getKeyInfoContent = function () {
     return (
+      `<KeyValue>` +
       `<RSAKeyValue>` +
       `<Modulus>${modulus}</Modulus>` +
       `<Exponent>${exponent}</Exponent>` +
       `</RSAKeyValue>` +
+      `</KeyValue>` +
       `<X509Data>` +
       `<X509Certificate>${certPem}</X509Certificate>` +
       `</X509Data>`
