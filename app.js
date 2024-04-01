@@ -2,10 +2,11 @@ console.clear();
 const { buildClientDte } = require('./xml-builder.js');
 const { signXml } = require('./xml-signer.js');
 const { extractPrivateKey, extractPublicCertificate } = require('./extract-keys.js');
+const FormData = require('form-data');
 
 const fs = require('fs-extra');
 const axios = require('axios');
-const { create } = require('xmlbuilder2');
+const { convert, create } = require('xmlbuilder2');
 const xml2js = require('xml2js');
 const path = require('path');
 
@@ -40,32 +41,29 @@ async function getSemilla() {
 
 async function processSemillaResponse() {
   try {
-    semObj.data = await getSemilla();
-    semObj.fetchedXmlDoc = await parser.parseStringPromise(semObj.data); // Parse String -> JSON
-    semObj.xmlVersion = semObj.data.slice(0, semObj.data.indexOf('>') + 1); // Get String of XML version
-    semObj.semilla = semObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_BODY'][0].SEMILLA[0]; // Get Semilla Value
-    semObj.estado = semObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_HDR'][0].ESTADO[0]; // Get Estado
-    semObj.xmlString = `${semObj.xmlVersion}\n<getToken><item><Semilla>${semObj.semilla}</Semilla></item></getToken>`; // Create XML String
-
-    console.log(`Semilla value extracted: ${semObj.semilla}`);
+    const semillaData = await getSemilla();
+    const semillaObject = convert(semillaData, { format: 'object' });
+    const semilla = semillaObject['SII:RESPUESTA']['SII:RESP_BODY'].SEMILLA;
+    console.log(`Semilla value extracted: ${semilla}`);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<getToken><item><Semilla>${semilla}</Semilla></item></getToken>`; // Create XML String
   } catch (error) {
     console.error('Error processing semilla response:', error);
   }
 }
+// processSemillaResponse();
 
 async function signSemillaXml() {
   try {
-    await processSemillaResponse();
-    await extractPrivateKey();
-    await extractPublicCertificate();
-    const publicCert = await fs.readFile(publicCertPath, 'utf8');
-    const privateKey = await fs.readFile(privateKeyPath, 'utf8');
+    const semillaString = await processSemillaResponse();
 
-    const signedSemillaXml = await signXml('getToken', semObj.xmlString, privateKey, publicCert);
+    const publicCert = await extractPublicCertificate();
+    const privateKey = await extractPrivateKey();
 
-    await fs.writeFile(signedSemillaPath, signedSemillaXml); // Save signed xml
+    const signedSemilla = await signXml('getToken', semillaString, privateKey, publicCert);
+
     console.error(`Semilla signing success...`);
-    return signedSemillaXml;
+    return signedSemilla;
+    await fs.writeFile(signedSemillaPath, signedSemilla); // Save signed xml
   } catch (error) {
     console.error(`Semilla signing failed: ${error}`);
   }
@@ -73,8 +71,8 @@ async function signSemillaXml() {
 
 async function getToken() {
   try {
-    const signedSemillaXml = await signSemillaXml();
-    const response = await axios.post(`${baseUrl}${tokenUrl}`, signedSemillaXml, {
+    const signedSemilla = await signSemillaXml();
+    const response = await axios.post(`${baseUrl}${tokenUrl}`, signedSemilla, {
       headers: { 'Content-Type': 'application/xml' },
     });
     console.log('Token request success...');
@@ -86,14 +84,11 @@ async function getToken() {
 
 async function processTokenResponse() {
   try {
-    tokObj.data = await getToken();
-    tokObj.fetchedXmlDoc = await parser.parseStringPromise(tokObj.data); // Parse String -> JSON
-    tokObj.xmlVersion = tokObj.data.slice(0, tokObj.data.indexOf('>') + 1); // Get String of XML version
-    tokObj.token = tokObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_BODY'][0].TOKEN[0]; // Get Semilla Value
-    tokObj.estado = tokObj.fetchedXmlDoc['SII:RESPUESTA']['SII:RESP_HDR'][0].ESTADO[0]; // Get Estado
-    tokObj.xmlString = `${tokObj.xmlVersion}\n<getToken><item><Semilla>${tokObj.semilla}</Semilla></item></getToken>`; // Create XML String
-
-    console.log(`Token value extracted: ${tokObj.token}`);
+    const tokenData = await getToken();
+    const tokenObject = convert(tokenData, { format: 'object' });
+    const token = tokenObject['SII:RESPUESTA']['SII:RESP_BODY'].TOKEN;
+    console.log(`Token value extracted: ${token}`);
+    return token;
   } catch (error) {
     console.error('Error processing token response:', error);
   }
@@ -101,23 +96,20 @@ async function processTokenResponse() {
 
 async function postBoletas() {
   try {
-    await processTokenResponse();
-    const boletaForm = await buildClientDte();
-    const response = await axios.post(`${baseUrl2}${envioUrl}`, boletaForm, {
+    const token = await processTokenResponse();
+    const form = await buildClientDte();
+
+    const response = await axios.post(`${baseUrl2}${envioUrl}`, form, {
       headers: {
-        ...boletaForm.getHeaders(),
-        Cookie: `TOKEN=${tokObj}`,
+        ...form.getHeaders(),
+        Cookie: `TOKEN=${token}`,
         'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT)',
       },
     });
-    console.log('---------------------------');
-    console.log('---------------------------');
-    console.log('Submission Successful:\n', response.data);
-    console.log('Headers:\n', response.headers);
+    console.log(response.data);
   } catch (error) {
-    console.log(error);
-    console.error('Submission Error:', error.response ? error.response.data : error.message);
+    console.error('Submission Error:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
   }
 }
 
-postBoletas();
+// postBoletas();

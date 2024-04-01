@@ -31,8 +31,10 @@ async function extractPrivateKey() {
     if (privateKey) {
       await fs.writeFile(privateKeyPath, privateKey);
       console.log('Private key has been saved successfully.');
+      return privateKey;
     } else {
       console.log('Private key not found in the .pfx file.');
+      return null;
     }
   } catch (error) {
     console.error('Failed to process PFX file:', error);
@@ -53,15 +55,17 @@ async function extractPublicCertificate() {
 
     if (!certBag) {
       console.error('No certificate found in PFX file.');
-      return;
+      return null;
     }
     console.log('Public Certificate extracted');
 
     let certPem = forge.pki.certificateToPem(certBag.cert);
     await fs.writeFile(publicCertPath, certPem);
     console.log('Public Certificate has been saved successfully.');
+    return certPem;
   } catch (error) {
     console.error('Failed to extract Public Certificate from PFX:', error);
+    return null;
   }
 }
 

@@ -16,7 +16,7 @@ const cafPath = path.join(__dirname, 'assets', 'CAF.xml');
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 
-const testPath = path.join(__dirname, 'examples', 'F60T33-ejemplo.xml');
+const sobrePath = path.join(__dirname, 'sobre.xml');
 
 let dteClientData;
 
@@ -303,12 +303,13 @@ async function buildClientDte() {
     // Sign the DteSobreXml according to specs
     const signedSobreXml = await signXml('SetDTE', dteSobreXml, privateKey, publicCert, modulus, exponent);
 
+    await fs.writeFile(sobrePath, signedSobreXml);
     const form = new FormData();
-    form.append('rutSender', RutEnvia.slice(0, RutEnvia.indexOf('-')));
-    form.append('dvSender', RutEnvia.slice(RutEnvia.indexOf('-') + 1));
-    form.append('rutCompany', RUTEmisor.slice(0, RutEnvia.indexOf('-')));
-    form.append('dvCompany', RUTEmisor.slice(RutEnvia.indexOf('-') + 1));
-    form.append('archivo', signedSobreXml);
+    form.append('rutSender', RutEnvia.slice(0, RutEnvia.indexOf('-') + 1));
+    form.append('dvSender', RutEnvia.slice(-1));
+    form.append('rutCompany', RUTEmisor.slice(0, RutEnvia.indexOf('-') + 1));
+    form.append('dvCompany', RUTEmisor.slice(-1));
+    form.append('archivo', fs.createReadStream(sobrePath));
 
     runServer(excelDataObject[0], {}, signedSobreXml);
     return form;
