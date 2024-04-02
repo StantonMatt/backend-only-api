@@ -7,7 +7,7 @@
       <RutReceptor>60803000-K</RutReceptor>
       <FchResol>30-12-2020</FchResol>
       <NroResol>0</NroResol>
-      <TmstFirmaEnv>2024-04-01T00:42:25</TmstFirmaEnv>
+      <TmstFirmaEnv>2024-04-01T21:05:36</TmstFirmaEnv>
       <SubTotDTE>
         <TpoDTE>39</TpoDTE>
         <NroDTE>50</NroDTE>
@@ -26,7 +26,7 @@
           <Emisor>
             <RUTEmisor>76607412-K</RUTEmisor>
             <RznSocEmisor>COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT</RznSocEmisor>
-            <GiroEmisor>Prestación de Servicios Sanitarios</GiroEmisor>
+            <GiroEmisor>CAPTACION, TRATAMIENTO Y DISTRIBUCION DE AGUA</GiroEmisor>
           </Emisor>
           <Receptor>
             <RUTRecep>15246448-7</RUTRecep>
@@ -107,11 +107,11 @@
               </DA>
               <FRMA algoritmo="SHA1withRSA">fD3uUHTGQu4T3FM+by6oZRTzW0ryNWWt+wlh34TR5MZPw8qQZITaqvumD98s6tfpWpynF34l6xd9EC//w9/g6A==</FRMA>
             </CAF>
-            <TSTED>2024-04-01T00:42:25</TSTED>
+            <TSTED>2024-04-01T21:05:36</TSTED>
           </DD>
-          <FRMT algoritmo="SHA1withRSA">Y4uL4+s795dPCKsHZQ3F0GMHeBDGILUcjk26ugP/homrsMKKRrSrlmicWwXNKqxteL2EZMATwPCRybzoQvuzqw==</FRMT>
+          <FRMT algoritmo="SHA1withRSA">Y6/V7uL0MB3LTtuVACZb3wN66qLmY5k0lNgL9/rApW16Ykf/Cgt5VRK6mRY8fz5AtHxo5VXyKb1ebkkv/dl9Hg==</FRMT>
         </TED>
-        <TmstFirma>2024-04-01T00:42:25</TmstFirma>
+        <TmstFirma>2024-04-01T21:05:36</TmstFirma>
       </Documento>
       <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
         <SignedInfo>
@@ -122,10 +122,10 @@
               <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
             </Transforms>
             <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <DigestValue>Zfx7CSTmCSoSIZQdr3pW8Oy1irg=</DigestValue>
+            <DigestValue>PL3NAKeIXrIoe4m3PN5F6N7xn4E=</DigestValue>
           </Reference>
         </SignedInfo>
-        <SignatureValue>VG0R1+kfV5R33ORN4cILT/URDJufYT7pA3Q2dSctvv7coLcahNvKf3WWCuZMnQGi+xcntYBkQbbGPTH8D3+NZ15+VefL4u4Mq/JFXbnuNESBiAsxxxlv+UhQvaUiSnL4hcZ4W2H+Xd1/wWAR750qcp576EmcpgdKMYJyIGO3RuI6qKEOCT76tesAItYVEFov+KnB1dJke3Sbv9gbiFvcFA7CvAh6h7++D+VONMSNpwisWEQbEIuF0lvCIeggBvnaPwdqFXMVmXH0FqkeoEbx5CzzXU3I/6o3fVIfNpDj2csOm4FdHTVAKg8JO3jvTLJowbaZMrhJ8zGf+hMPVENTYg==</SignatureValue>
+        <SignatureValue>b+VHN1Wg1tSDMUbgUTIjV1eenamRHqfrIlZJi0D4dnoUagA4Xd4DIe3vnS8JF7ydBjrKT8Z7lmS4ISMoOEVw7lU7RC04hFDE4pVUotnscggwFHsspftTbDkmv8jNM8uh2/mvlEBsRnAOZloByu6IPiIsGH1Z25KPBO2Ea2DrFbgYhrn3Pqc0Y+rmwDO7fyQoZzsvGPBueisfm+QJSQ/Krp7QwIlYaFpe9la9cHZVWNTI+kAMVIvfet7MWRoc6Cvb2PeJgbLHyxV/M1OTk5d9KEqcFDp6PM3bOcs4l5T5kUJdo3tSiBccqQjwONiAPiSa/ufyhKn5Kp/6pL61v7i6OQ==</SignatureValue>
         <KeyInfo>
           <KeyValue>
             <RSAKeyValue>
@@ -193,7 +193,7 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
           <Emisor>
             <RUTEmisor>76607412-K</RUTEmisor>
             <RznSocEmisor>COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT</RznSocEmisor>
-            <GiroEmisor>Prestación de Servicios Sanitarios</GiroEmisor>
+            <GiroEmisor>CAPTACION, TRATAMIENTO Y DISTRIBUCION DE AGUA</GiroEmisor>
           </Emisor>
           <Receptor>
             <RUTRecep>12988461-4</RUTRecep>
@@ -282,11 +282,11 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               </DA>
               <FRMA algoritmo="SHA1withRSA">fD3uUHTGQu4T3FM+by6oZRTzW0ryNWWt+wlh34TR5MZPw8qQZITaqvumD98s6tfpWpynF34l6xd9EC//w9/g6A==</FRMA>
             </CAF>
-            <TSTED>2024-04-01T00:42:25</TSTED>
+            <TSTED>2024-04-01T21:05:36</TSTED>
           </DD>
-          <FRMT algoritmo="SHA1withRSA">LNX67enWLzhEP2IV807Ug5JHgPQ3TD4igFw2pTF10XM6KdehI+BSjq11LC15eiGINuELYsQZTz6uaNOILWc9VQ==</FRMT>
+          <FRMT algoritmo="SHA1withRSA">KPaZq2Es/069Zm/DB0JMAsyvpKvW3RydC3x31yxiDhwT47vFQwLsBOPqF5Y8DB6d8u+2B2TY+W3Ip3pr/V0ENA==</FRMT>
         </TED>
-        <TmstFirma>2024-04-01T00:42:25</TmstFirma>
+        <TmstFirma>2024-04-01T21:05:36</TmstFirma>
       </Documento>
       <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
         <SignedInfo>
@@ -297,10 +297,10 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
             </Transforms>
             <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <DigestValue>Z/yg2yrbSoEk2Jakqq0xG0Lp2nA=</DigestValue>
+            <DigestValue>YP8L1z0U8uoFNXLze6uakWnoln8=</DigestValue>
           </Reference>
         </SignedInfo>
-        <SignatureValue>eqoxQaH/okovDH5xH1FYzr+w+OSlj/wy9wWccacTjb1llJtKC6tL+Z9vPTEbIiB6WecjXg1L6UsZ1r4X9KSPGKQkt77htbuO5sWkwrI0wCsizw6cAr57ml9ubo/BeEEsf3AMjOhrI8D9+tNtVLNC049c1J0+gq2ZygF+/4aiZVQOGtS8mstmC7QraILsodVHTQLp6xFln+Ht5aLkWwsIMgnGWOV4i2mMaXb+vzS8I7js2f7g7GLziMvJfiEv23/NuIxCSlco964yGdn5wrarxSTINi0YKJnN/XEVW03Tbw+c9lXJHVPwg8r8G+yjfQ/DKBcXHQL9T7AvkHb8zyYnhw==</SignatureValue>
+        <SignatureValue>PruKkOF/Hin12r1893503KFH+UAzo42ntqqWAxcoAfdjkNtUu8ki2G4eKhh8eZoJjvOVNSk/HueT1Qs0OwYkhLIJ1yoDR11bw4sbFJaINXx7M/cExM5KaXOfYmkfkscgvCfRij+1t0TcOnjlTXqOxXyFVaSASqVM6cGjZe7ujzLhtqtk08aA23CqvLS+Nqi/4KqHc0lTZdhCdYu/F1Vnw4rIH/32LxJDVDeWVAm/+7l01vrqTiV4daMH8I5apkhVsc/KVeZ4p6vqO5w6YFbDJIHMACADa9bUwUCOXlenG/oEfh/+2npdW2n8YBAP9g/caxtdpPqRNE5LcBTqIVefpg==</SignatureValue>
         <KeyInfo>
           <KeyValue>
             <RSAKeyValue>
@@ -368,7 +368,7 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
           <Emisor>
             <RUTEmisor>76607412-K</RUTEmisor>
             <RznSocEmisor>COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT</RznSocEmisor>
-            <GiroEmisor>Prestación de Servicios Sanitarios</GiroEmisor>
+            <GiroEmisor>CAPTACION, TRATAMIENTO Y DISTRIBUCION DE AGUA</GiroEmisor>
           </Emisor>
           <Receptor>
             <RUTRecep>16318673-K</RUTRecep>
@@ -449,11 +449,11 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               </DA>
               <FRMA algoritmo="SHA1withRSA">fD3uUHTGQu4T3FM+by6oZRTzW0ryNWWt+wlh34TR5MZPw8qQZITaqvumD98s6tfpWpynF34l6xd9EC//w9/g6A==</FRMA>
             </CAF>
-            <TSTED>2024-04-01T00:42:25</TSTED>
+            <TSTED>2024-04-01T21:05:36</TSTED>
           </DD>
-          <FRMT algoritmo="SHA1withRSA">o1vqCa67t4tEMKq0cSMO1FBlz+TCdmwwnQm9Nx5s8esaEve1J6XWxunwVR5raYCcosIxdpFCrF+us9rn7M1vAA==</FRMT>
+          <FRMT algoritmo="SHA1withRSA">C0wkRIDjaN5CzX0sauC5KOEai2B/PlKlFUDp69r3Rha7yMioK/bo/ZwkAKeCoF3N3fLx/pA8I+jmkgFhstWb7A==</FRMT>
         </TED>
-        <TmstFirma>2024-04-01T00:42:25</TmstFirma>
+        <TmstFirma>2024-04-01T21:05:36</TmstFirma>
       </Documento>
       <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
         <SignedInfo>
@@ -464,10 +464,10 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
             </Transforms>
             <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <DigestValue>KLzgHgC/i7aEWx5o/+YrDLNclDQ=</DigestValue>
+            <DigestValue>ujUhW+SWnYyM8H+dMZuAp/8eLnI=</DigestValue>
           </Reference>
         </SignedInfo>
-        <SignatureValue>c1Mxd++Uq64DmxP1GyqpyqDC2K33u6j32oXQVbyTv69CghEznOIinzzPe7bFmbdmJiQesvIVZlOK4nq2W7T/1EjSYdSPdvlL6yrxdZn6djCGKSS00ZGqABp8y5wpHlB8armLza8/j5bv8GXF5KtKYnSHRxlqBI10r9S+hSpjI1e3dHShiDp4DKE8Od2i77JdYxW6vsWrQxgjWMNe+MYTfNReRq0l5VGgJXroe+550goH/y854yNQkjfuVR14rLdp9myJ6fM5jKQVAQbpkYSWHWtmYikfIVn8pNhqWZUPupE16Zv+3RpjG4U88hflbVa0iI+EqRejIwCIHcyl79Iz+Q==</SignatureValue>
+        <SignatureValue>WB3Bc8XqCTwNP/IKL+p8aYoRTnAw6ckEO1yUDIaIYUxgzVbd0am0KWdWXkKoy2cErZU5UUeixay1zvXB/EiawuzRqmk77MBJ9vEOnBpZ3RN0uCaHmAxPNgCqJ/IJbOfmZ3uUQ9cWxFfBgqo3gfLfUTm3B7fkcVTCfISYZy3x4/FFPuuitqkj7RiUgjJdgSB7vSeZWcPfcNyMYjRfnJFlaSvk7PWbPd8b0jVBUgGEefjBAQFAH33bOQN+yNlHDXH3JaVVU5qgIiWuRfcpy91FRAi9IDk1c7fxM4FeVI7YUdQaCg+983wudWac2rqx6cAp6lQzkOh+mPMWCuEQGCQSPQ==</SignatureValue>
         <KeyInfo>
           <KeyValue>
             <RSAKeyValue>
@@ -535,7 +535,7 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
           <Emisor>
             <RUTEmisor>76607412-K</RUTEmisor>
             <RznSocEmisor>COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT</RznSocEmisor>
-            <GiroEmisor>Prestación de Servicios Sanitarios</GiroEmisor>
+            <GiroEmisor>CAPTACION, TRATAMIENTO Y DISTRIBUCION DE AGUA</GiroEmisor>
           </Emisor>
           <Receptor>
             <RUTRecep>12166559-K</RUTRecep>
@@ -616,11 +616,11 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               </DA>
               <FRMA algoritmo="SHA1withRSA">fD3uUHTGQu4T3FM+by6oZRTzW0ryNWWt+wlh34TR5MZPw8qQZITaqvumD98s6tfpWpynF34l6xd9EC//w9/g6A==</FRMA>
             </CAF>
-            <TSTED>2024-04-01T00:42:25</TSTED>
+            <TSTED>2024-04-01T21:05:36</TSTED>
           </DD>
-          <FRMT algoritmo="SHA1withRSA">g2DVL9o0OcuSpM+1sew6+AMTRGYwuRdFz2ZNyf3CTul5kLz28RoeExLviu834ctuzURBBPPGSWHIUY/O0eUghw==</FRMT>
+          <FRMT algoritmo="SHA1withRSA">X8IE6Hkbzct+s/Ds5SqubHn6Zyfho1FPXVoji2IHaYjkKpwOMqznXG3hbGwFV5E0EPleJpEqisoLIFyG0UV9BA==</FRMT>
         </TED>
-        <TmstFirma>2024-04-01T00:42:25</TmstFirma>
+        <TmstFirma>2024-04-01T21:05:36</TmstFirma>
       </Documento>
       <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
         <SignedInfo>
@@ -631,10 +631,10 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
               <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
             </Transforms>
             <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <DigestValue>5nqzApnq6bLvKIyZsXVzKHqcM90=</DigestValue>
+            <DigestValue>xsq/T04WEA2rXH7/tBw0ZpPkZPk=</DigestValue>
           </Reference>
         </SignedInfo>
-        <SignatureValue>lKoZLaPBjaOtOKJdpGZ6RD4MtvhFTrbr1N4vswTVM/SxUvOeXCEz6SKnlx8PXjrxR8Pe8q3GlbG33Nr1ALEmEJqDqpXTjGzFdbd5PRK+6sbu9/24bWIFuIFO2F2NstkeXOM/sxcg5UXcoeeLERDWWueFZNIpcveXcpy4PZjOIU7IjmPjIbiVMy1tQumGbdaZIlms8bvvqm9IRcAIj+/yDQle9wElExfl7ESki62MfuVVvYo3qfXYvDdn+CIsxTwl7u6fMEz46RWnyEabn862Hsn1bsUFKvHpuYe234muWRALo288INzYpWCew6dWrwb92/ofC4rLAsgb6/g0zxT2zQ==</SignatureValue>
+        <SignatureValue>gP/Mj6h47aqCMnuKA8doGxf8lkX8/M4IPEfY7Y8waHt3vQRl9w9K0UTGxCUG7XrZH0+UdgM6VVn6l3832pk+mkUix9aQTnwL1HGli81BtewDbjKlG13pZiUC5LyC1p6m+ufBELd44Y6duHoqo/AqqixrwTZyl/X2uAcadPbEp+V80DDYEdJRPKePuOzchnKg8wHGt92qptFkFAXC+aU40/dThqPrixJjygrXIJ6wRaQSeFSWfycHHtclXyQ20I7g0JpzdKzOsHY8hI395SNvBV5xvqaFBlNnr/bzLrx48kB5Mg2mONfjsMDcZuMS9KRNGsz64rOdv9dJ6yFIUo6MPQ==</SignatureValue>
         <KeyInfo>
           <KeyValue>
             <RSAKeyValue>
@@ -690,7 +690,7 @@ SiEIAl7p5lvx2Kc4EFsE</X509Certificate>
       </Signature>
     </DTE>
   </SetDTE>
-<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SetDoc"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>Sa1aZOyDjZU+2Y+f/qS6a2erBo8=</DigestValue></Reference></SignedInfo><SignatureValue>bPUVWd6brGc9oqNEYNvCgPtw0PdPXRWfWK6K18oYasWhvId7lDFJzaYk5WOka2IbhQvq+BF08f2y6dyZNn1iFJFadqMZy/+ClN3JSjrOdQIo0qXMR5HdMS6qaKslISa9wvQ6xt4opko6ZMAq2kDqVkfbvhpuQ9AIO0rJzhNxw6D0YRPX6OeZp2k0cIrLIScJRviRsDmWqf6qpBXoL+zF8Ic1ANg/dFAxkAP/AG/Dm4m0H+KPgNwiN/tvlbT6isW+TmNdnox56F2cWSlh0mYvvc1LfHg2nRjrkeT3eljrSuMAx/LOGNxdzaLiksbC9NJUHk27kB+oZXVjZURC5d8C0w==</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>AKxk70Y/nFCHWv8CBta0USwQVbn6MwoTwgg8uifgosXYE47jlShQqZUXvQCK4Q+Dno4CAIYafFWGkYfp+1ce+KQZOmKAYSmVBrPIyFcmJkST5rH9NDHUpfnV99TVlKaflsOc0DU2clIARuNo/EvunFg23N/m6LekfM9NideT4OQ999zfIOP+7OiPYEc3JErFE7tlq4T3OyMYSudKjS7XKG+ypHAdYaikC2v0H0FoRpUx3tMPzCD45UoU634ghHy4bUde1F5B2qOF3mYXPgfg2qHANrk37y09Ed3KSluUEBaA83cV1bqMejbyaPBJN8IGeBrnpWn2a3zgG55HuCTJdF8=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIHuzCCBaOgAwIBAgIKGnh6PQABAAlJFTANBgkqhkiG9w0BAQsFADCBvzELMAkG
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SetDoc"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>M23R3MQUJCnFi1CYGACv1tlgr6M=</DigestValue></Reference></SignedInfo><SignatureValue>dSMiRwE1hG3vEWcs9oUmaV2GSi/v5TJm9d/HasFt6pGNbVPRDZYjA0fXbcytTPbGICTHlhgAvtfuShkH3gcNtj2Q0g8dGPcP6HErysIattWytXiy4pXR102mSyO+y/DGkgs5u2iUNgqLiolzirGUVWx0rZWA1xsEsZ+hBOsLOGzJ3zhUK0xDfynBFUxx9++TsrsP5xSja084j/ozDN0h1dRYzJtOu/0ncTgxxnHUWeXypIlXY4n/K9opqNvsx2kmULT6jUjT/ScKE5GTuTGdcFjLQNKCDVll8gn7IdCncri1c+foADhxTetG8qxpNzsd3o7pHxfKyKpsy/xB2ZTO7Q==</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>AKxk70Y/nFCHWv8CBta0USwQVbn6MwoTwgg8uifgosXYE47jlShQqZUXvQCK4Q+Dno4CAIYafFWGkYfp+1ce+KQZOmKAYSmVBrPIyFcmJkST5rH9NDHUpfnV99TVlKaflsOc0DU2clIARuNo/EvunFg23N/m6LekfM9NideT4OQ999zfIOP+7OiPYEc3JErFE7tlq4T3OyMYSudKjS7XKG+ypHAdYaikC2v0H0FoRpUx3tMPzCD45UoU634ghHy4bUde1F5B2qOF3mYXPgfg2qHANrk37y09Ed3KSluUEBaA83cV1bqMejbyaPBJN8IGeBrnpWn2a3zgG55HuCTJdF8=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIHuzCCBaOgAwIBAgIKGnh6PQABAAlJFTANBgkqhkiG9w0BAQsFADCBvzELMAkG
 A1UEBhMCQ0wxHTAbBgNVBAgTFFJlZ2lvbiBNZXRyb3BvbGl0YW5hMREwDwYDVQQH
 EwhTYW50aWFnbzEUMBIGA1UEChMLRS1DRVJUQ0hJTEUxIDAeBgNVBAsTF0F1dG9y
 aWRhZCBDZXJ0aWZpY2Fkb3JhMR4wHAYDVQQDExVFLUNFUlRDSElMRSBDQSBGRVMg

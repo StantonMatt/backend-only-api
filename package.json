@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon app",
-    "dev": "nodemon xml-builder"
+    "dev": "nodemon boleta-pruebas"
   },
   "keywords": [],
   "author": "",

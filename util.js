@@ -27,4 +27,17 @@ function getTedFormattedTimeStamp() {
   }).format(today);
   return `${date}T${time}`;
 }
-module.exports = { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp };
+
+function getFormattedTimeStamp() {
+  const today = new Date();
+  const date = getTodayDteFormattedDate(today);
+  const hour = String(today.getHours()).padStart(2, 0);
+  const minutes = String(today.getMinutes()).padStart(2, 0);
+  const seconds = String(today.getSeconds()).padStart(2, 0);
+  const time = new Intl.DateTimeFormat('sv-SE', {
+    timeStyle: 'medium',
+    timeZone: 'America/Santiago',
+  }).format(today);
+  return `${date}T${hour}_${minutes}_${seconds}`;
+}
+module.exports = { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp, getFormattedTimeStamp };

@@ -7,16 +7,16 @@ const FormData = require('form-data');
 const { create, convert } = require('xmlbuilder2');
 const { signXml } = require('./xml-signer.js');
 const { extractModulus, extractExponent } = require('./extract-keys.js');
-const { getClientData } = require('./database.js');
+const { getClientData2 } = require('./database.js');
 const { runServer } = require('./server.js');
 const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util.js');
 
-const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
-const cafPath = path.join(__dirname, 'assets', 'CAF.xml');
+const folioPath = path.join(__dirname, 'agricola-la-frontera', 'folio_disponible.txt');
+const cafPath = path.join(__dirname, 'agricola-la-frontera', 'CAF.xml');
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 
-const sobrePath = path.join(__dirname, 'sobre.xml');
+const sobrePath = path.join(__dirname, 'agricola-la-frontera', 'sobre.xml');
 
 let dteClientData;
 
@@ -24,10 +24,9 @@ function addDetalle(detalleObjectArray, NroLinDet, QtyItem, UnmdItem) {
   detalleObjectArray.forEach(detalle => {
     dteClientData.Detalle.push({
       NroLinDet: NroLinDet++,
+      IndExe: detalle.IndExe,
       NmbItem: detalle.NmbItem,
-      DscItem: detalle.DscItem,
-      QtyItem: detalle.NmbItem === 'Cargo Fijo' ? 1 : QtyItem,
-      UnmdItem: detalle.NmbItem === 'Cargo Fijo' ? null : UnmdItem,
+      QtyItem: detalle.QtyItem,
       PrcItem: detalle.PrcItem,
       MontoItem: detalle.MontoItem,
     });
@@ -49,9 +48,9 @@ function addDscRcg(dscRcgObject, NroLinDR) {
   });
 }
 
-async function buildClientDte() {
+async function buildClientDte2() {
   try {
-    const excelDataObject = await getClientData();
+    const excelDataObject = await getClientData2();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////FIXED DATA//////////////////////////////////////////////////////
@@ -63,18 +62,18 @@ async function buildClientDte() {
     }
     const nroMaxBoletasPorSobre = 50;
     const RUTEmisor = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
-    const RznSocEmisor = 'COOPERATIVA DE SERVICIO DE ABASTECIMIENTO Y DISTRIBUCION DE AGUA POTABLE ALCANTARILLADO Y SANEAMIENT';
-    const GiroEmisor = 'CAPTACION, TRATAMIENTO Y DISTRIBUCION DE AGUA';
+    const RznSocEmisor = 'AGRICOLA LA FRONTERA LIMITADA';
+    const GiroEmisor = 'CULTIVO DE PRODUCTOS AGRICOLAS EN COMBINACION CON LA CRIA DE ANIMALES';
     const TipoDTE = 39;
-    const IndServicio = 2;
+    const IndServicio = 3;
     const RUTProvSW = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
     const RutEnvia = '5657540-5';
     const RutReceptor = '60803000-K';
-    const FchResol = '30-12-2020';
+    const FchResol = '2024-04-01';
     const NroResol = 0;
     const TmstFirmaEnv = getTedFormattedTimeStamp();
     const TpoDTE = TipoDTE;
-    let NroDTE = nroTotalBoletas - nroMaxBoletasPorSobre > 0 ? nroMaxBoletasPorSobre : nroTotalBoletas;
+    let NroDTE = 5;
 
     let dteSobreObject = {
       Caratula: {
@@ -126,6 +125,24 @@ async function buildClientDte() {
       const FchEmis = getTodayDteFormattedDate();
       const FchVenc = getExpiryDteFormattedDate();
 
+      const CodRef = String(excelDataObject[i].CodRef).trim();
+      const RazonRef = String(excelDataObject[i].RazonRef).trim();
+
+      const NmbItem1 = excelDataObject[i].NmbItem1 ? String(excelDataObject[i].NmbItem1).split(/\s+/).join(' ').trim() : undefined;
+      const NmbItem2 = excelDataObject[i].NmbItem2 ? String(excelDataObject[i].NmbItem2).split(/\s+/).join(' ').trim() : undefined;
+
+      const QtyItem1 = Number(excelDataObject[i].QtyItem1);
+      const QtyItem2 = Number(excelDataObject[i].QtyItem2);
+
+      const PrcItem1 = Number(excelDataObject[i].PrcItem1);
+      const PrcItem2 = Number(excelDataObject[i].PrcItem2);
+
+      const MontoItem1 = Number(excelDataObject[i].MontoItem1);
+      const MontoItem2 = Number(excelDataObject[i].MontoItem2);
+
+      let IndExe1 = NmbItem1 && NmbItem1.includes('exento') ? 2 : null;
+      let IndExe2 = NmbItem2 && NmbItem2.includes('exento') ? 2 : null;
+
       const RUTRecep = String(excelDataObject[i].RUTRecep).toUpperCase().trim();
       const CdgIntRecep = String(excelDataObject[i].CdgIntRecep).trim();
       const RznSocRecep = String(excelDataObject[i].RznSocRecep).split(/\s+/).join(' ').trim();
@@ -149,41 +166,27 @@ async function buildClientDte() {
 
       const QtyItem = Number(excelDataObject[i].ConsumoM3);
       const UnmdItem = 'Metros Cubicos';
-      const detalleObject = [
-        {
-          NmbItem: 'Agua',
-          DscItem: 'Consumo de Agua Potable',
-          PrcItem: Number(excelDataObject[i].CostoM3Agua),
-          MontoItem: Number(excelDataObject[i].CostoTotalAgua),
-        },
-        {
-          NmbItemo: 'Alcantarillado',
-          DscItem: 'Recoleccion de Aguas Servidas',
-          PrcItem: Number(excelDataObject[i].CostoM3Alcantarillado),
-          MontoItem: Number(excelDataObject[i].CostoTotalAlcantarillado),
-        },
-        {
-          NmbItem: 'Tratamiento',
-          DscItem: 'Tratamiento de Aguas Servidas',
-          PrcItem: Number(excelDataObject[i].CostoM3Tratamiento),
-          MontoItem: Number(excelDataObject[i].CostoTotalTratamiento),
-        },
-        {
-          NmbItem: 'Cargo Fijo',
-          DscItem: 'Cargo Fijo',
-          PrcItem: Number(excelDataObject[i].CargoFijo),
-          MontoItem: Number(excelDataObject[i].CargoFijo),
-        },
-      ];
 
-      const dscRcgObject = [
-        { TpoMov: 'D', GlosaDR: 'Descuento', TpoValor: '$', ValorDR: Descuento },
-        { TpoMov: 'D', GlosaDR: 'Subsidio', TpoValor: '$', ValorDR: Subsidio, IndExeDR: 1 },
-        { TpoMov: 'R', GlosaDR: 'Repactacion', TpoValor: '$', ValorDR: Repactacion, IndExeDR: 1 },
-        { TpoMov: 'R', GlosaDR: 'Reposicion', TpoValor: '$', ValorDR: Reposicion },
-        { TpoMov: 'R', GlosaDR: 'Multa', TpoValor: '$', ValorDR: Multa },
-        { TpoMov: 'R', GlosaDR: 'Otros', TpoValor: '$', ValorDR: Otros },
-      ];
+      const detalleObject = [];
+
+      if (NmbItem1) {
+        detalleObject.push({
+          IndExe: IndExe1,
+          NmbItem: NmbItem1,
+          QtyItem: QtyItem1,
+          PrcItem: PrcItem1,
+          MontoItem: MontoItem1,
+        });
+      }
+      if (NmbItem2) {
+        detalleObject.push({
+          IndExe: IndExe2,
+          NmbItem: NmbItem2,
+          QtyItem: QtyItem2,
+          PrcItem: PrcItem2,
+          MontoItem: MontoItem2,
+        });
+      }
 
       //////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////CLIENT TED JSON//////////////////////////////////
@@ -196,13 +199,11 @@ async function buildClientDte() {
           RR: RUTRecep,
           RSR: RznSocRecep,
           MNT: MntTotal,
-          IT1: detalleObject[0].DscItem,
+          IT1: detalleObject[0].NmbItem,
           CAF: cafObject.CAF,
           TSTED,
         },
       };
-      // ted.DD.CAF = cafObject.CAF;
-      // ted.DD.TSTED = TSTED;
 
       //////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////CLIENT DTE JSON//////////////////////////////////
@@ -222,27 +223,23 @@ async function buildClientDte() {
           },
           Receptor: {
             RUTRecep,
-            CdgIntRecep,
             RznSocRecep,
-            // Contacto,
-            DirRecep,
-            CmnaRecep,
-            CiudadRecep,
           },
-          RUTProvSW,
           Totales: {
             MntNeto,
             IVA,
             MntTotal,
-            SaldoAnterior,
-            VlrPagar,
           },
         },
+        RUTProvSW,
         Detalle: [],
         DscRcgGlobal: [],
+        Referencia: {
+          CodRef,
+          RazonRef,
+        },
       };
       addDetalle(detalleObject, NroLinDet, QtyItem, UnmdItem);
-      addDscRcg(dscRcgObject, NroLinDR);
 
       // Create a Document out of the ted object and parse to String
       const tedString = create().ele(ted).toString();
@@ -266,7 +263,7 @@ async function buildClientDte() {
         // Add the root element 'DTE' with its version attribute
         .ele('DTE', { version: '1.0' })
         // Add the 'Documento' element including RUTEmisor, TipoDTE and Folio
-        .ele('Documento', { ID: `DTE_${RUTEmisor.slice(0, RUTEmisor.indexOf('-'))}_T${TipoDTE}_F${Folio}` })
+        .ele('Documento', { ID: `F${Folio}_T${TipoDTE}` })
         // Add the dteObject data
         .ele(dteObject);
       // Convert the built document structure into a formatted XML string.
@@ -311,11 +308,12 @@ async function buildClientDte() {
     form.append('dvCompany', RUTEmisor.slice(-1));
     form.append('archivo', fs.createReadStream(sobrePath));
 
-    runServer(excelDataObject[0], {}, signedSobreXml);
+    // runServer(excelDataObject[0], {}, signedSobreXml);
     return form;
   } catch (error) {
     console.log(`XML build has failed: ${error}`);
   }
 }
 
-module.exports = { buildClientDte };
+// buildClientDte2();
+module.exports = { buildClientDte2 };
