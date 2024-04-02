@@ -8,7 +8,6 @@ const { buildClientDte2 } = require('./boleta-pruebas.js');
 const fs = require('fs-extra');
 const axios = require('axios');
 const { convert } = require('xmlbuilder2');
-const xml2js = require('xml2js');
 const path = require('path');
 
 const signedSemillaPath = path.join(__dirname, 'temp', 'output', 'signed_semilla.xml');
@@ -16,6 +15,9 @@ const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem')
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 const trackidPath = path.join(__dirname, 'agricola-la-frontera', `trackid${getFormattedTimeStamp()}.txt`);
 const tokenPath = path.join(__dirname, 'agricola-la-frontera', `token${getFormattedTimeStamp()}.txt`);
+
+let publicCert;
+let privateKey;
 
 //////////////////////////////////////////
 /////////////API ENDPOINTS////////////////
@@ -28,6 +30,10 @@ const envioUrl = '/boleta.electronica.envio';
 //////////////////////////////////////////
 let token;
 let trackid = 22494754;
+(async function extractAndSaveKeys() {
+  publicCert = await extractPublicCertificate();
+  privateKey = await extractPrivateKey();
+})();
 
 async function getSemilla() {
   try {
@@ -55,9 +61,6 @@ async function processSemillaResponse() {
 async function signSemillaXml() {
   try {
     const semillaString = await processSemillaResponse();
-
-    const publicCert = await extractPublicCertificate();
-    const privateKey = await extractPrivateKey();
 
     const signedSemilla = await signXml('getToken', semillaString, privateKey, publicCert);
 
@@ -155,14 +158,14 @@ async function getStatus() {
 
 async function getStatus2() {
   try {
-    // await processTokenResponse();
+    await processTokenResponse();
     console.log('-----------------------');
     console.log(`TOKEN: DQQ84HE70F5L7`);
     console.log(`TRACKID: 22495462`);
     console.log('-----------------------');
-    const response = await axios.get(`${getUrl}${envioUrl}/76681460-3-22495462`, {
+    const response = await axios.get(`${getUrl}${envioUrl}/76681460-3-215295046`, {
       headers: {
-        Cookie: `TOKEN=DQQ84HE70F5L7`,
+        Cookie: `TOKEN=${token}`,
         'Content-Type': 'application/json',
       },
     });

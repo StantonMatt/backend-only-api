@@ -121,6 +121,7 @@ async function buildClientDte2() {
 
       let NroLinDR = 1;
       let NroLinDet = 1;
+      let NroLinRef = 1;
 
       const FchEmis = getTodayDteFormattedDate();
       const FchVenc = getExpiryDteFormattedDate();
@@ -231,13 +232,14 @@ async function buildClientDte2() {
             MntTotal,
           },
         },
-        RUTProvSW,
         Detalle: [],
         DscRcgGlobal: [],
         Referencia: {
+          NroLinRef,
           CodRef,
           RazonRef,
         },
+        // RUTProvSW,
       };
       addDetalle(detalleObject, NroLinDet, QtyItem, UnmdItem);
 
@@ -245,10 +247,11 @@ async function buildClientDte2() {
       const tedString = create().ele(ted).toString();
       // Create signer to sign tedString and update it with content to sign(tedString)
       const tedSigner = crypto.createSign('RSA-SHA256').update(tedString);
-      // Sign the String and get the Signature
+      // Sign the String with CAF PRIVATE KEY and get the Signature
       const tedSignature = tedSigner.sign(cafPrivateKey, 'base64');
       // Recreate the XML as a String, including the Signature
       const signedTedString = '<TED version="1.0">' + tedString + `<FRMT algoritmo="SHA1withRSA">${tedSignature}</FRMT></TED>`;
+
       // Create a Document out of the signedTedString and parse to Object
       const signedTedObject = create().ele(signedTedString).end({ format: 'object' });
 
@@ -283,6 +286,7 @@ async function buildClientDte2() {
       // await fs.writeFile(dtePath, formattedSignedDteXml);
 
       Folio++;
+      NroLinRef++;
     }
 
     // Create Document from the DteSobreObject, addding required attributes
@@ -315,5 +319,5 @@ async function buildClientDte2() {
   }
 }
 
-// buildClientDte2();
+buildClientDte2();
 module.exports = { buildClientDte2 };
