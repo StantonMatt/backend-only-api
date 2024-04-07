@@ -2,7 +2,7 @@ const XLSX = require('xlsx');
 const path = require('path');
 
 const excelDataPath = path.join(__dirname, 'database', '02-2024 PLANILLA vencto 20-03-2024.xlsx');
-const excelDataPath2 = path.join(__dirname, 'agricola-la-frontera', 'test.xlsx');
+const excelDataPath2 = path.join(__dirname, 'database', 'test.xlsx');
 
 async function getClientData() {
   try {

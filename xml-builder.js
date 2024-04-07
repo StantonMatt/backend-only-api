@@ -1,5 +1,7 @@
 'use strict';
 
+const { chilkatExample } = require('./chilkat.js');
+
 const crypto = require('crypto');
 const fs = require('fs-extra');
 const path = require('path');
@@ -10,9 +12,8 @@ const { extractModulus, extractExponent } = require('./extract-keys.js');
 const { getClientData } = require('./database.js');
 const { runServer } = require('./server.js');
 const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util.js');
-
 const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
-const cafPath = path.join(__dirname, 'assets', 'CAF.xml');
+const cafPath = path.join(__dirname, 'assets', 'CAFCOAB.xml');
 const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 
@@ -52,7 +53,6 @@ function addDscRcg(dscRcgObject, NroLinDR) {
 async function buildClientDte() {
   try {
     const excelDataObject = await getClientData();
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////FIXED DATA//////////////////////////////////////////////////////
 
@@ -148,7 +148,7 @@ async function buildClientDte() {
       const Otros = Number(excelDataObject[i].Otros);
 
       const QtyItem = Number(excelDataObject[i].ConsumoM3);
-      const UnmdItem = 'Metros Cubicos';
+      const UnmdItem = 'M3';
       const detalleObject = [
         {
           NmbItem: 'Agua',
@@ -229,7 +229,6 @@ async function buildClientDte() {
             CmnaRecep,
             CiudadRecep,
           },
-          RUTProvSW,
           Totales: {
             MntNeto,
             IVA,
@@ -270,12 +269,25 @@ async function buildClientDte() {
         // Add the dteObject data
         .ele(dteObject);
       // Convert the built document structure into a formatted XML string.
-      const dteXml = dteDoc.end({ prettyPrint: true });
+      const dteXml = dteDoc.end();
 
       // Sign DTE with private key and certificate targetting the 'Documento' element
-      const signedDteXml = await signXml('Documento', dteXml, privateKey, publicCert, modulus, exponent);
+      const signedDteXml = await signXml({
+        xml: dteXml,
+        modulus,
+        exponent,
+        privateKey,
+        publicCert,
+        canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+        signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
+        references: {
+          xpath: `//*[local-name(.)='Documento']`,
+          digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
+          transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
+        },
+      });
       // Parse the signedDteXml to an Object
-      const signedDteObject = convert({ encoding: 'UTF-8' }, signedDteXml, { format: 'object' });
+      const signedDteObject = convert({ encoding: 'ISO-8859-1' }, signedDteXml, { format: 'object' });
 
       // Push all signed DTE Objects into the Sobre Object
       dteSobreObject.DTE.push(signedDteObject.DTE);
@@ -291,17 +303,30 @@ async function buildClientDte() {
     // Create Document from the DteSobreObject, addding required attributes
     const dteSobreDoc = create({ version: '1.0', encoding: 'ISO-8859-1' })
       .ele('EnvioBOLETA', {
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xsi:schemaLocation': 'http://www.sii.cl/SiiDte EnvioBOLETA_v11.xsd',
-        version: '1.0',
+        // 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        // 'xsi:schemaLocation': 'http://www.sii.cl/SiiDte EnvioBOLETA_v11.xsd',
+        // version: '1.0',
         xmlns: 'http://www.sii.cl/SiiDte',
       })
       .ele('SetDTE', { ID: 'SetDoc' })
       .ele(dteSobreObject);
     // Parse the Sobre Doc to prettyPrinted XML format
-    const dteSobreXml = dteSobreDoc.end({ prettyPrint: true });
+    const dteSobreXml = dteSobreDoc.end();
     // Sign the DteSobreXml according to specs
-    const signedSobreXml = await signXml('SetDTE', dteSobreXml, privateKey, publicCert, modulus, exponent);
+    const signedSobreXml = await signXml({
+      xml: dteSobreXml,
+      modulus,
+      exponent,
+      privateKey,
+      publicCert,
+      canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+      signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
+      references: {
+        xpath: `//*[local-name(.)='SetDTE']`,
+        digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
+        transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
+      },
+    });
 
     await fs.writeFile(sobrePath, signedSobreXml);
     const form = new FormData();
@@ -310,6 +335,8 @@ async function buildClientDte() {
     form.append('rutCompany', RUTEmisor.slice(0, RutEnvia.indexOf('-') + 1));
     form.append('dvCompany', RUTEmisor.slice(-1));
     form.append('archivo', fs.createReadStream(sobrePath));
+
+    chilkatExample(signedSobreXml);
 
     runServer(excelDataObject[0], {}, signedSobreXml);
     return form;

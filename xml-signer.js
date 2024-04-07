@@ -2,17 +2,18 @@
 
 const { SignedXml } = require('xml-crypto');
 
-async function signXml(tag, xmlString, privateKey, publicCert, modulus, exponent) {
-  const sigData = getSinatureData(tag, privateKey, publicCert);
-  const sig = new SignedXml(sigData);
+async function signXml(sigData) {
+  let privateKey = sigData.privateKey;
+  let publicCert = sigData.publicCert;
+  const sig = new SignedXml({ privateKey, publicCert });
 
-  const certPem = publicCert.toString().replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').trim();
+  const certPem = sigData.publicCert.toString().replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').trim();
   sig.getKeyInfoContent = function () {
     return (
       `<KeyValue>` +
       `<RSAKeyValue>` +
-      `<Modulus>${modulus}</Modulus>` +
-      `<Exponent>${exponent}</Exponent>` +
+      `<Modulus>${sigData.modulus}</Modulus>` +
+      `<Exponent>${sigData.exponent}</Exponent>` +
       `</RSAKeyValue>` +
       `</KeyValue>` +
       `<X509Data>` +
@@ -20,22 +21,24 @@ async function signXml(tag, xmlString, privateKey, publicCert, modulus, exponent
       `</X509Data>`
     );
   };
+  sig.canonicalizationAlgorithm = sigData.canonicalizationAlgorithm;
+  sig.signatureAlgorithm = sigData.signatureAlgorithm;
   sig.addReference(sigData.references);
-  sig.computeSignature(xmlString);
+  sig.computeSignature(sigData.xml);
 
   return sig.getSignedXml();
 }
 
-function getSinatureData(tag, privateKey, publicCert) {
+function getSinatureData(tag, privateKey, publicCert, transform) {
   return {
     privateKey,
     publicCert,
-    canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
+    canonicalizationAlgorithm: 'http://www.w3.org/2000/09/xmldsig#enveloped-signature',
     signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
     references: {
       xpath: `//*[local-name(.)='${tag}']`,
       digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
-      transforms: ['http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
+      transforms: [`http://www.w3.org/2001/10/xml-exc-c14n#WithComments`],
     },
   };
 }

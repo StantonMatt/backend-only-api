@@ -2,10 +2,10 @@ const path = require('path');
 const forge = require('node-forge');
 const fs = require('fs-extra');
 
-const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
-const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
-const pfxPath = path.join(__dirname, 'assets', 'certificado.pfx');
-const pfxPasswordPath = path.join(__dirname, 'assets', 'clave_certificado.txt');
+const privateKeyPath = path.join(__dirname, 'assets', 'keys', 'private_key.pem');
+const publicCertPath = path.join(__dirname, 'assets', 'keys', 'certificate.pem');
+const pfxPath = path.join(__dirname, 'assets', 'certificates', 'user.pfx');
+const pfxPasswordPath = path.join(__dirname, 'assets', 'keys', 'cer_pass.key');
 
 async function extractPrivateKey() {
   try {
