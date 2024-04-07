@@ -11,7 +11,7 @@ const { signXml } = require('./xml-signer.js');
 const { extractModulus, extractExponent } = require('./extract-keys.js');
 const { getClientData2 } = require('./database.js');
 const { runServer } = require('./server.js');
-const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util.js');
+const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./date-util.js');
 const { writeFile } = require('fs');
 
 const folioPath = path.join(__dirname, 'agricola-la-frontera', 'folio_disponible.txt');

@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs-extra');
 const forge = require('node-forge');
 
+const projectRoot = path.resolve(__dirname);
+
 const pfxPath = path.join(__dirname, 'assets', 'certificates', 'user.pfx');
 const cerPath = path.join(__dirname, 'assets', 'certificates', 'user.cer');
 const pfxPasswordPath = path.join(__dirname, 'assets', 'keys', 'cer_pass.key');
@@ -25,7 +27,7 @@ async function generateCer() {
     // Write the certificate to a file
     await fs.writeFile(cerPath, pem, 'utf8');
 
-    console.log('Certificate extracted successfully:', cerPath);
+    console.log('Certificate extracted successfully:', path.relative(projectRoot, cerPath));
   } catch (error) {
     console.log(`Failed to generate certificate: ${error}`);
   }

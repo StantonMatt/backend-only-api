@@ -2,10 +2,9 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const FormData = require('form-data');
 const { create, convert } = require('xmlbuilder2');
-const { getExpiryDteFormattedDate } = require('./util.js');
-const { getClientData2 } = require('./database.js');
+const { getExpiryDteFormattedDate } = require('./date-util.js');
+const { getSheetData } = require('./database.js');
 const { generateCer } = require('./generate-cer.js');
 
 const folioPath = path.join(__dirname, 'agricola-la-frontera', 'folio_disponible.txt');
@@ -46,7 +45,7 @@ function addDscRcg(dscRcgObject, NroLinDR) {
 
 async function buildClientDte() {
   try {
-    const excelDataObject = await getClientData2();
+    const excelDataObject = await getSheetData('test');
 
     // Read the CAF.xml file as utf8
     const cafFileContents = await fs.readFile(cafPath, 'utf8');
@@ -67,7 +66,7 @@ async function buildClientDte() {
       nroTotalBoletas++;
       if (!number.Numero) break;
     }
-    const nroMaxBoletasPorSobre = 50;
+
     const RUTEmisor = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
     const RznSocEmisor = 'AGRICOLA LA FRONTERA LIMITADA';
     const GiroEmisor = 'CULTIVO DE PRODUCTOS AGRICOLAS EN COMBINACION CON LA CRIA DE ANIMALES';
@@ -85,10 +84,8 @@ async function buildClientDte() {
 
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
     let dtePath;
-    for (let i = 0; i < 5; i++) {
-      // console.log(nroTotalBoletas);
-
-      dtePath = path.join(__dirname, 'assets', 'dtes', '39', `dte${i}.xml`);
+    for (let i = 0; i < 120; i++) {
+      dtePath = path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'unsigned', `dte${i + 1}.xml`);
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //////////////////////////////////////////////////////DATA//////////////////////////////////////////////////////
@@ -306,12 +303,6 @@ async function buildClientDte() {
     const dteSobreXml = dteSobreDoc.end({ prettyPrint: true });
 
     await fs.writeFile(templatePath, dteSobreXml);
-    const form = new FormData();
-    form.append('rutSender', RutEnvia.slice(0, RutEnvia.indexOf('-') + 1));
-    form.append('dvSender', RutEnvia.slice(-1));
-    form.append('rutCompany', RUTEmisor.slice(0, RutEnvia.indexOf('-') + 1));
-    form.append('dvCompany', RUTEmisor.slice(-1));
-    form.append('archivo', fs.createReadStream(templatePath));
 
     // runServer(excelDataObject[0], {}, signedSobreXml);
     await generateCer();

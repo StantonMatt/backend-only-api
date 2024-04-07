@@ -1,9 +1,10 @@
 console.clear();
 const { buildClientDte } = require('./make-envio.js');
 const { signXml } = require('./xml-signer.js');
-const { extractPrivateKey, extractPublicCertificate } = require('./extract-keys.js');
-const { getFormattedTimeStamp } = require('./util.js');
+const { extractPrivateKey, extractPublicCertificate, extractModulus, extractExponent } = require('./extract-keys.js');
 const { buildClientDte2 } = require('./boleta-pruebas.js');
+const { waitForFileReady, clearOldFiles } = require('./file-util.js');
+const paths = require('./paths.js');
 
 const { promisify } = require('util');
 const { exec } = require('child_process');
@@ -11,18 +12,19 @@ const execAsync = promisify(exec);
 const fs = require('fs-extra');
 const axios = require('axios');
 const { convert } = require('xmlbuilder2');
-const path = require('path');
 
-const signedSemillaPath = path.join(__dirname, 'temp', 'output', 'signed_semilla.xml');
-const trackidPath = path.join(__dirname, 'assets', 'tracking', `trackid${getFormattedTimeStamp()}.txt`);
-const tokenPath = path.join(__dirname, 'assets', 'tracking', `token${getFormattedTimeStamp()}.txt`);
-
-const dte39FolderPath = path.join(__dirname, 'assets', 'dtes', '39');
-
-const dllPath = 'C:\\Users\\Matthew\\OneDrive\\Programming\\MakeEnvio\\bin\\Debug\\net6.0\\MakeEnvio.dll';
+const signedSemillaPath = paths.getSignedSemillaPath();
+const trackidPath = paths.getTrackidPath();
+const tokenPath = paths.getTokenPath();
+const signedBoletaDtePath = paths.getSignedBoletaDtePath();
+const unsignedBoletaDtePath = paths.getUnsignedBoletaDtePath();
+const sobreBoletaPath = paths.getSobreBoletaPath();
+const dllPath = paths.getDllPath();
 
 let publicCert;
 let privateKey;
+let modulus;
+let exponent;
 
 //////////////////////////////////////////
 /////////////API ENDPOINTS////////////////
@@ -34,119 +36,39 @@ const envioUrl = '/boleta.electronica.envio';
 //////////////////////////////////////////
 //////////////////////////////////////////
 let token;
-let trackid = 22494754;
+let trackid;
 
 (async function run() {
   try {
-    await clearOldFiles();
+    await clearOldFiles(sobreBoletaPath);
+    await clearOldFiles(signedBoletaDtePath);
+    await clearOldFiles(unsignedBoletaDtePath);
     await extractAndSaveKeys();
     // const semillaData = await getSemilla();
     // const semillaXml = await processSemillaResponse(semillaData);
-    // const semillaSigData = await getSigData(semillaXml, 'Semilla');
-    // const signedSemilla = await signSemillaXml(semillaSigData);
+    // const signedSemilla = await signSemillaXml(semillaXml);
     // const tokenData = await getToken(signedSemilla);
     // await processTokenResponse(tokenData);
     await generateDteXmls();
+    // // Assuming generateDteXmls creates files that compileAndSignSobre depends on
 
-    // // Assuming generateDteXmls creates files that getSignedSobreXml depends on
-
-    await waitForFileReady(path.join(__dirname, 'assets', 'dtes', '39', 'dte0.xml')); // Ensure the file is ready before proceeding
-    // await waitForFileReady(path.join(__dirname, 'assets', 'dtes', '39', 'dte1.xml')); // Ensure the file is ready before proceeding
-    // await waitForFileReady(path.join(__dirname, 'assets', 'dtes', '39', 'dte2.xml')); // Ensure the file is ready before proceeding
-    // await waitForFileReady(path.join(__dirname, 'assets', 'dtes', '39', 'dte3.xml')); // Ensure the file is ready before proceeding
-    // await waitForFileReady(path.join(__dirname, 'assets', 'dtes', '39', 'dte4.xml')); // Ensure the file is ready before proceeding
-    await getSignedSobreXml();
+    await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
+    await compileAndSignSobre();
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
     // Handle the error appropriately, perhaps by retrying or aborting the process
   }
 })();
 
-async function waitForFileReady(filePath, timeout = 30000) {
-  const start = Date.now();
-  let size = null;
-
-  while (Date.now() - start < timeout) {
-    try {
-      const stats = await fs.stat(filePath);
-      if (size === null) {
-        size = stats.size;
-      } else if (size === stats.size) {
-        console.log('File size stable, assuming readiness');
-        return true; // File size stable, assume readiness
-      } else {
-        size = stats.size; // Update size for next check
-      }
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error; // Rethrow errors other than file not existing
-    }
-    console.log('File size unstable, trying again');
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait a bit before retrying
-  }
-
-  throw new Error(`Timeout waiting for file ${filePath} to be ready.`);
-}
-
-// Utility function to delay execution
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function tryDelete(filePath, attempts = 5) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      await fs.unlink(filePath);
-      console.log('Deleted file:', filePath);
-      return;
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        console.log('File already deleted:', filePath);
-        return;
-      }
-      if (i < attempts - 1) {
-        console.log(`Attempt ${i + 1} failed, retrying...`);
-        await delay(500); // Wait before retrying
-      } else {
-        throw error; // Rethrow after last attempt
-      }
-    }
-  }
-}
-
-async function clearOldFiles() {
-  try {
-    const files = await fs.readdir(dte39FolderPath);
-    for (const file of files) {
-      const filePath = path.join(dte39FolderPath, file);
-      await tryDelete(filePath);
-    }
-  } catch (error) {
-    console.log(`Error deleting files: ${error}`);
-  }
-}
-
 async function extractAndSaveKeys() {
   try {
     publicCert = await extractPublicCertificate();
     privateKey = await extractPrivateKey();
+    modulus = await extractModulus();
+    exponent = await extractExponent();
   } catch (error) {
     console.log(`Error extracting and saving keys: ${error}`);
   }
-}
-
-async function getSigData(xml, xpath) {
-  return {
-    xml,
-    privateKey,
-    publicCert,
-    canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
-    signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
-    references: {
-      xpath: `//*[local-name(.)='${xpath}']`,
-      digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
-      transforms: ['http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
-    },
-  };
 }
 
 async function getSemilla() {
@@ -171,9 +93,9 @@ async function processSemillaResponse(semillaData) {
   }
 }
 
-async function signSemillaXml(semillaSigData) {
+async function signSemillaXml(semillaXml) {
   try {
-    const signedSemilla = await signXml(semillaSigData);
+    const signedSemilla = await signXml(semillaXml, 'Semilla', privateKey, publicCert, modulus, exponent);
 
     console.error(`Semilla signing success...`);
     return signedSemilla;
@@ -212,10 +134,10 @@ async function generateDteXmls() {
   }
 }
 
-async function getSignedSobreXml() {
+async function compileAndSignSobre() {
   try {
     const { stdout, stderr } = await execAsync(`dotnet ${dllPath}`);
-    console.log('STDOUT:', stdout);
+    console.log('STDOUT:\n', stdout);
     if (stderr) {
       console.error('STDERR:', stderr);
     }
@@ -224,10 +146,8 @@ async function getSignedSobreXml() {
   }
 }
 
-async function postSignedXml() {
+async function postSignedSobreXml() {
   try {
-    const form = await buildClientDte();
-
     const response = await axios.post(`${postUrl}${envioUrl}`, form, {
       headers: {
         ...form.getHeaders(),
@@ -242,7 +162,7 @@ async function postSignedXml() {
   }
 }
 
-async function postSignedXml2() {
+async function postSignedSobreXml2() {
   try {
     const form = await buildClientDte2();
 
@@ -261,8 +181,6 @@ async function postSignedXml2() {
     console.error('Submission Error:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
   }
 }
-
-// postSignedXml2();
 
 async function getStatus() {
   try {
