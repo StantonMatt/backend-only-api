@@ -1,3 +1,5 @@
+'use strict';
+
 var os = require('os');
 if (os.platform() == 'win32') {
   if (os.arch() == 'ia32') {

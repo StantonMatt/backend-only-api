@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const forge = require('node-forge');
 const fs = require('fs-extra');

@@ -6,11 +6,11 @@ const { getFormattedTimeStamp } = require('./date-util');
 const getSignedSemillaPath = function () {
   return path.join(__dirname, 'temp', 'output', 'signed_semilla.xml');
 };
-const getTrackidPath = function () {
-  return path.join(__dirname, 'assets', 'tracking', `trackid${getFormattedTimeStamp()}.txt`);
+const getBoletaTrackidPath = function () {
+  return path.join(__dirname, 'assets', 'tracking', 'boletas', `trackid${getFormattedTimeStamp()}.txt`);
 };
 const getTokenPath = function () {
-  return path.join(__dirname, 'assets', 'tracking', `token${getFormattedTimeStamp()}.txt`);
+  return path.join(__dirname, 'assets', 'tracking', 'boletas', `token${getFormattedTimeStamp()}.txt`);
 };
 const getSignedBoletaDtePath = function () {
   return path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'signed');
@@ -33,7 +33,7 @@ const getSobreFolderPath = function () {
 
 module.exports = {
   getSignedSemillaPath,
-  getTrackidPath,
+  getBoletaTrackidPath,
   getTokenPath,
   getSignedBoletaDtePath,
   getUnsignedBoletaDtePath,

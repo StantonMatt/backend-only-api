@@ -1,3 +1,5 @@
+'use strict';
+
 const XLSX = require('xlsx');
 const path = require('path');
 
@@ -18,19 +20,23 @@ async function getSheetData(fileName) {
 }
 
 async function getCompanyData() {
-  return {
-    excelDataObject: await getSheetData('test'),
-    RUTProvSW: String(excelDataObject[0].RUTEmisor).toUpperCase().trim(),
-    RUTEmisor: String(excelDataObject[0].RUTEmisor).toUpperCase().trim(),
-    RutEnvia: '5657540-5',
-    RutReceptor: '60803000-K',
-    RznSocEmisor: 'AGRICOLA LA FRONTERA LIMITADA',
-    GiroEmisor: 'CULTIVO DE PRODUCTOS AGRICOLAS EN COMBINACION CON LA CRIA DE ANIMALES',
-    FchResol: '2024-04-01',
-    NroResol: 0,
-    TipoDTE: 39,
-    IndServicio: 3,
-  };
+  try {
+    const excelDataObject = await getSheetData('test');
+    return {
+      RUTProvSW: String(excelDataObject[0].RUTEmisor).toUpperCase().trim(),
+      RUTEmisor: String(excelDataObject[0].RUTEmisor).toUpperCase().trim(),
+      RutEnvia: '5657540-5',
+      RutReceptor: '60803000-K',
+      RznSocEmisor: 'AGRICOLA LA FRONTERA LIMITADA',
+      GiroEmisor: 'CULTIVO DE PRODUCTOS AGRICOLAS EN COMBINACION CON LA CRIA DE ANIMALES',
+      FchResol: '2024-04-01',
+      NroResol: 0,
+      TipoDTE: 39,
+      IndServicio: 3,
+    };
+  } catch (error) {
+    console.log(`ERROR: Failed to get company data ${error}`);
+  }
 }
 
 module.exports = { getSheetData, getCompanyData };

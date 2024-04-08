@@ -84,7 +84,7 @@ async function buildClientDte() {
 
     let Folio = Number(await fs.readFile(folioPath, 'binary'));
     let dtePath;
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 5; i++) {
       dtePath = path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'unsigned', `dte${i + 1}.xml`);
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,7 +306,6 @@ async function buildClientDte() {
 
     // runServer(excelDataObject[0], {}, signedSobreXml);
     await generateCer();
-    return form;
   } catch (error) {
     console.log(`XML build has failed: ${error}`);
   }

@@ -54,14 +54,16 @@ async function tryDelete(filePath, attempts = 5) {
   }
 }
 
-async function clearOldFiles(folderPath) {
+async function clearOldFiles(folderPathsArray) {
   try {
-    const files = await fs.readdir(folderPath);
-    for (const file of files) {
-      const filePath = path.join(folderPath, file);
-      await tryDelete(filePath);
+    for (const folderPath of folderPathsArray) {
+      const files = await fs.readdir(folderPath);
+      for (const file of files) {
+        const filePath = path.join(folderPath, file);
+        await tryDelete(filePath);
+      }
+      console.log(`Old ${folderPath.slice(folderPath.lastIndexOf('\\') + 1)} files deleted: ${files.length}`);
     }
-    console.log(`Old ${folderPath.slice(folderPath.lastIndexOf('\\') + 1)} files deleted: ${files.length}`);
   } catch (error) {
     console.log(`Error deleting files: ${error}`);
   }

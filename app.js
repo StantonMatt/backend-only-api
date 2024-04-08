@@ -1,10 +1,13 @@
+'use strict';
+
 console.clear();
+const paths = require('./paths.js');
 const { buildClientDte } = require('./make-envio.js');
 const { signXml } = require('./xml-signer.js');
 const { extractPrivateKey, extractPublicCertificate, extractModulus, extractExponent } = require('./extract-keys.js');
 const { buildClientDte2 } = require('./boleta-pruebas.js');
 const { waitForFileReady, clearOldFiles } = require('./file-util.js');
-const paths = require('./paths.js');
+const { getFormData } = require('./generate-form.js');
 
 const { promisify } = require('util');
 const { exec } = require('child_process');
@@ -14,12 +17,14 @@ const axios = require('axios');
 const { convert } = require('xmlbuilder2');
 
 const signedSemillaPath = paths.getSignedSemillaPath();
-const trackidPath = paths.getTrackidPath();
+const trackidPath = paths.getBoletaTrackidPath();
 const tokenPath = paths.getTokenPath();
 const signedBoletaDtePath = paths.getSignedBoletaDtePath();
 const unsignedBoletaDtePath = paths.getUnsignedBoletaDtePath();
 const sobreBoletaPath = paths.getSobreBoletaPath();
 const dllPath = paths.getDllPath();
+
+const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath];
 
 let publicCert;
 let privateKey;
@@ -40,20 +45,18 @@ let trackid;
 
 (async function run() {
   try {
-    await clearOldFiles(sobreBoletaPath);
-    await clearOldFiles(signedBoletaDtePath);
-    await clearOldFiles(unsignedBoletaDtePath);
+    await clearOldFiles(foldersToDelete);
     await extractAndSaveKeys();
-    // const semillaData = await getSemilla();
-    // const semillaXml = await processSemillaResponse(semillaData);
-    // const signedSemilla = await signSemillaXml(semillaXml);
-    // const tokenData = await getToken(signedSemilla);
-    // await processTokenResponse(tokenData);
+    const semillaData = await getSemilla();
+    const semillaXml = await processSemillaResponse(semillaData);
+    const signedSemilla = await signSemillaXml(semillaXml);
+    const tokenData = await getToken(signedSemilla);
+    await processTokenResponse(tokenData);
     await generateDteXmls();
-    // // Assuming generateDteXmls creates files that compileAndSignSobre depends on
-
     await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
     await compileAndSignSobre();
+    await postSignedSobreXml();
+    await getStatus();
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
     // Handle the error appropriately, perhaps by retrying or aborting the process
@@ -137,9 +140,9 @@ async function generateDteXmls() {
 async function compileAndSignSobre() {
   try {
     const { stdout, stderr } = await execAsync(`dotnet ${dllPath}`);
-    console.log('STDOUT:\n', stdout);
+    console.log('MakeEnvio.cs console logs:\n', stdout);
     if (stderr) {
-      console.error('STDERR:', stderr);
+      console.error('ERROR MakeEnvio.cs logs:\n', stderr);
     }
   } catch (error) {
     console.log(`Error running C# .dll to sign DTE's: ${error}`);
@@ -148,6 +151,7 @@ async function compileAndSignSobre() {
 
 async function postSignedSobreXml() {
   try {
+    const form = await getFormData(sobreBoletaPath + '\\envio_boleta1.xml');
     const response = await axios.post(`${postUrl}${envioUrl}`, form, {
       headers: {
         ...form.getHeaders(),
@@ -157,26 +161,8 @@ async function postSignedSobreXml() {
     });
     console.log(response.data);
     trackid = response.data.trackid;
-  } catch (error) {
-    console.error('Submission Error:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
-  }
-}
-
-async function postSignedSobreXml2() {
-  try {
-    const form = await buildClientDte2();
-
-    const response = await axios.post(`${postUrl}${envioUrl}`, form, {
-      headers: {
-        ...form.getHeaders(),
-        Cookie: `TOKEN=${token}`,
-        'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT)',
-      },
-    });
-    console.log(await response.data);
-    trackid = String(await response.data.trackid);
-    await fs.writeFile(trackidPath, trackid);
-    await fs.writeFile(tokenPath, token);
+    await fs.writeFile(trackidPath, String(trackid));
+    await fs.writeFile(tokenPath, String(token));
   } catch (error) {
     console.error('Submission Error:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
   }
@@ -184,37 +170,19 @@ async function postSignedSobreXml2() {
 
 async function getStatus() {
   try {
-    // await processTokenResponse();
     console.log('-----------------------');
     console.log(`TOKEN: ${token}`);
     console.log(`TRACKID: ${trackid}`);
     console.log('-----------------------');
-    const response = await axios.get(`${getUrl}${envioUrl}/76607412-K-${trackid}`, {
+    const response = await axios.get(`${getUrl}${envioUrl}/76681460-3-${trackid}`, {
       headers: {
-        Cookie: `TOKEN=${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
     console.log(`Request result:\n-----------------------\n${response.data}\n-----------------------`);
   } catch (error) {
-    console.error(`Failed request:\n${error.response ? error.response.data : error.message}\n-----------------------\n`);
-  }
-}
-
-async function getStatus2() {
-  try {
-    console.log('-----------------------');
-    console.log(`TOKEN: DQQ84HE70F5L7`);
-    console.log(`TRACKID: 22495462`);
-    console.log('-----------------------');
-    const response = await axios.get(`${getUrl}${envioUrl}/76681460-3-215295046`, {
-      headers: {
-        Cookie: `TOKEN=${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log(`Request result:\n-----------------------\n${response.data}\n-----------------------`);
-  } catch (error) {
+    console.log(`${JSON.stringify(error, null, 2)}`);
     console.error(`Failed request:\n${error.response ? error.response.data : error.message}\n-----------------------\n`);
   }
 }
