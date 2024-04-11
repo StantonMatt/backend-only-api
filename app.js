@@ -1,22 +1,20 @@
 'use strict';
 
-console.clear();
 const paths = require('./paths.js');
-const { buildClientDte } = require('./make-envio.js');
-const { signXml } = require('./xml-signer.js');
-const { extractPrivateKey, extractPublicCertificate, extractModulus, extractExponent } = require('./extract-keys.js');
-const { buildClientDte2 } = require('./boleta-pruebas.js');
-const { waitForFileReady, clearOldFiles } = require('./file-util.js');
+const { buildClientDte } = require('./generate-sobre.js');
+const { signXml } = require('./signer.js');
+const { waitForFileReady, clearOldFiles } = require('./util-file.js');
 const { getFormData } = require('./generate-form.js');
+const { buildRcof } = require('./generate-rcof.js');
 
 const { promisify } = require('util');
 const { exec } = require('child_process');
 const execAsync = promisify(exec);
 const fs = require('fs-extra');
 const axios = require('axios');
-const { convert } = require('xmlbuilder2');
+const { create, convert } = require('xmlbuilder2');
 
-const signedSemillaPath = paths.getSignedSemillaPath();
+const signedSemillaXmlPath = paths.getSignedSemillaXmlPath();
 const trackidPath = paths.getBoletaTrackidPath();
 const tokenPath = paths.getTokenPath();
 const signedBoletaDtePath = paths.getSignedBoletaDtePath();
@@ -26,15 +24,10 @@ const dllPath = paths.getDllPath();
 
 const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath];
 
-let publicCert;
-let privateKey;
-let modulus;
-let exponent;
-
 //////////////////////////////////////////
 /////////////API ENDPOINTS////////////////
-const getUrl = 'https://apicert.sii.cl/recursos/v1';
-const postUrl = 'https://pangal.sii.cl/recursos/v1';
+const baseUrl = 'https://apicert.sii.cl/recursos/v1';
+const baseBoletaUrl = 'https://pangal.sii.cl/recursos/v1';
 const semillaUrl = '/boleta.electronica.semilla';
 const tokenUrl = '/boleta.electronica.token';
 const envioUrl = '/boleta.electronica.envio';
@@ -46,16 +39,17 @@ let trackid;
 (async function run() {
   try {
     await clearOldFiles(foldersToDelete);
-    await extractAndSaveKeys();
     const semillaData = await getSemilla();
-    const semillaXml = await processSemillaResponse(semillaData);
-    const signedSemilla = await signSemillaXml(semillaXml);
-    const tokenData = await getToken(signedSemilla);
+    const semilla = await processSemillaResponse(semillaData);
+    const semillaXml = await createSemillaXml(semilla);
+    const signedSemillaXml = await signSemillaXml(semillaXml);
+    const tokenData = await getToken(signedSemillaXml);
     await processTokenResponse(tokenData);
     await generateDteXmls();
     await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
     await compileAndSignSobre();
-    await postSignedSobreXml();
+    await buildRcof();
+    // await postSignedSobreXml();
     await getStatus();
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
@@ -63,20 +57,9 @@ let trackid;
   }
 })();
 
-async function extractAndSaveKeys() {
-  try {
-    publicCert = await extractPublicCertificate();
-    privateKey = await extractPrivateKey();
-    modulus = await extractModulus();
-    exponent = await extractExponent();
-  } catch (error) {
-    console.log(`Error extracting and saving keys: ${error}`);
-  }
-}
-
 async function getSemilla() {
   try {
-    const response = await axios.get(`${getUrl}${semillaUrl}`);
+    const response = await axios.get(`${baseUrl}${semillaUrl}`);
     console.log(`Semilla request success...`);
     return response.data;
   } catch (error) {
@@ -90,32 +73,43 @@ async function processSemillaResponse(semillaData) {
     const semillaObject = convert(semillaData, { format: 'object' });
     const semilla = semillaObject['SII:RESPUESTA']['SII:RESP_BODY'].SEMILLA;
     console.log(`Semilla value extracted: ${semilla}`);
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<getToken><item><Semilla>${semilla}</Semilla></item></getToken>`;
+    return semilla;
   } catch (error) {
     console.error('Error processing semilla response:', error);
   }
 }
 
+async function createSemillaXml(semilla) {
+  try {
+    const semillaDoc = create({ version: '1.0', encoding: 'UTF-8' }).ele('getToken').ele('item').ele('Semilla').txt(semilla);
+
+    const semillaXml = semillaDoc.end();
+    return semillaXml;
+  } catch (error) {
+    console.log(`ERROR: Creating XML: ${error}`);
+  }
+}
+
 async function signSemillaXml(semillaXml) {
   try {
-    const signedSemilla = await signXml(semillaXml, 'Semilla', privateKey, publicCert, modulus, exponent);
-
+    const signedSemillaXml = await signXml(semillaXml, 'item', `http://www.w3.org/2000/09/xmldsig#enveloped-signature`);
     console.error(`Semilla signing success...`);
-    return signedSemilla;
+    await fs.writeFile(signedSemillaXmlPath, signedSemillaXml);
+    return signedSemillaXml;
   } catch (error) {
     console.error(`Semilla signing failed: ${error}`);
   }
 }
 
-async function getToken(signedSemilla) {
+async function getToken(signedSemillaXml) {
   try {
-    const response = await axios.post(`${getUrl}${tokenUrl}`, signedSemilla, {
+    const response = await axios.post(`${baseUrl}${tokenUrl}`, signedSemillaXml, {
       headers: { 'Content-Type': 'application/xml' },
     });
     console.log('Token request success...');
     return response.data;
   } catch (error) {
-    console.log('Token post request failed:', error);
+    console.log('Token post request failed:', error.response);
   }
 }
 
@@ -152,7 +146,7 @@ async function compileAndSignSobre() {
 async function postSignedSobreXml() {
   try {
     const form = await getFormData(sobreBoletaPath + '\\envio_boleta1.xml');
-    const response = await axios.post(`${postUrl}${envioUrl}`, form, {
+    const response = await axios.post(`${baseBoletaUrl}${envioUrl}`, form, {
       headers: {
         ...form.getHeaders(),
         Cookie: `TOKEN=${token}`,
@@ -174,9 +168,9 @@ async function getStatus() {
     console.log(`TOKEN: ${token}`);
     console.log(`TRACKID: ${trackid}`);
     console.log('-----------------------');
-    const response = await axios.get(`${getUrl}${envioUrl}/76681460-3-${trackid}`, {
+    const response = await axios.get(`${baseUrl}${envioUrl}/76681460-3-22507570`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `TOKEN=${token}`,
         'Content-Type': 'application/json',
       },
     });

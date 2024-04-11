@@ -6,8 +6,7 @@
   "scripts": {
     "start": "nodemon app",
     "builder": "nodemon xml-builder",
-    "dev": "nodemon boleta-pruebas",
-    "makeenvio": "nodemon make-envio"
+    "dev": "nodemon generate-rcof"
   },
   "keywords": [],
   "author": "",

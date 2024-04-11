@@ -1,12 +1,16 @@
 'use strict';
 
 const { SignedXml } = require('xml-crypto');
+const keys = require('./extract-keys.js');
 
-async function signXml(xml, signElement, privateKey, publicCert, modulus, exponent) {
+async function signXml(xml, signElement, transform) {
   try {
-    const sigData = getSinatureData(signElement);
-    // let privateKey = sigData.privateKey;
-    // let publicCert = sigData.publicCert;
+    const publicCert = await keys.extractPublicCertificate();
+    const privateKey = await keys.extractPrivateKey();
+    const modulus = await keys.extractModulus();
+    const exponent = await keys.extractExponent();
+
+    const sigData = getSinatureData(signElement, transform);
     const sig = new SignedXml({ privateKey, publicCert });
 
     const certPem = publicCert.toString().replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').trim();
@@ -27,22 +31,21 @@ async function signXml(xml, signElement, privateKey, publicCert, modulus, expone
     sig.signatureAlgorithm = sigData.signatureAlgorithm;
     sig.addReference(sigData.references);
     sig.computeSignature(xml);
-
     return sig.getSignedXml();
   } catch (error) {
     console.log(`ERROR: Signing failed: ${error}`);
   }
 }
 
-function getSinatureData(signElement) {
+function getSinatureData(signElement, transform) {
   try {
     return {
-      canonicalizationAlgorithm: 'http://www.w3.org/2000/09/xmldsig#enveloped-signature',
+      canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
       signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
       references: {
         xpath: `//*[local-name(.)='${signElement}']`,
+        transforms: [transform],
         digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
-        transforms: [`http://www.w3.org/2001/10/xml-exc-c14n#WithComments`],
       },
     };
   } catch (error) {
