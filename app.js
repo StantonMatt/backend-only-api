@@ -6,6 +6,7 @@ const { signXml } = require('./signer.js');
 const { waitForFileReady, clearOldFiles } = require('./util-file.js');
 const { getFormData } = require('./generate-form.js');
 const { buildRcof } = require('./generate-rcof.js');
+const { generateTed } = require('./generate-timbres.js');
 
 const { promisify } = require('util');
 const { exec } = require('child_process');
@@ -17,12 +18,13 @@ const { create, convert } = require('xmlbuilder2');
 const signedSemillaXmlPath = paths.getSignedSemillaXmlPath();
 const trackidPath = paths.getBoletaTrackidPath();
 const tokenPath = paths.getTokenPath();
-const signedBoletaDtePath = paths.getSignedBoletaDtePath();
-const unsignedBoletaDtePath = paths.getUnsignedBoletaDtePath();
-const sobreBoletaPath = paths.getSobreBoletaPath();
+const signedBoletaDtePath = paths.getSignedBoletaDteFolderPath();
+const unsignedBoletaDtePath = paths.getUnsignedBoletaDteFolderPath();
+const sobreBoletaPath = paths.getSobreBoletaFolderPath();
+const timbresBoletaFolderPath = paths.getTimbresBoletaFolderPath();
 const dllPath = paths.getDllPath();
 
-const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath];
+const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath];
 
 //////////////////////////////////////////
 /////////////API ENDPOINTS////////////////
@@ -49,8 +51,9 @@ let trackid;
     await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
     await compileAndSignSobre();
     await buildRcof();
+    await generateTed();
     // await postSignedSobreXml();
-    await getStatus();
+    // await getStatus();
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
     // Handle the error appropriately, perhaps by retrying or aborting the process
@@ -168,7 +171,7 @@ async function getStatus() {
     console.log(`TOKEN: ${token}`);
     console.log(`TRACKID: ${trackid}`);
     console.log('-----------------------');
-    const response = await axios.get(`${baseUrl}${envioUrl}/76681460-3-22507570`, {
+    const response = await axios.get(`${baseUrl}${envioUrl}/76681460-3-0216471848`, {
       headers: {
         Cookie: `TOKEN=${token}`,
         'Content-Type': 'application/json',

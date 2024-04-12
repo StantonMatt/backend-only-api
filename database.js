@@ -8,6 +8,8 @@ const testFileName = 'test';
 
 async function getSheetData(fileName) {
   try {
+    if (fileName === 0) fileName = mainFileName;
+    if (fileName === 1) fileName = testFileName;
     const excelDataPath = path.join(__dirname, 'database', fileName + '.xlsx');
     const workbook = XLSX.readFile(excelDataPath);
     const sheetName = workbook.SheetNames[0];
@@ -21,18 +23,18 @@ async function getSheetData(fileName) {
 
 async function getCompanyData() {
   try {
-    const excelDataObject = await getSheetData(testFileName);
+    const excelDataObject = await getSheetData(mainFileName);
     return {
       rutProvSw: String(excelDataObject[0][cN().rutEmisor]).toUpperCase().trim(),
       rutEmisor: String(excelDataObject[0][cN().rutEmisor]).toUpperCase().trim(),
-      rutEnvia: '5657540-5',
-      rutReceptor: '60803000-K',
-      rznSocEmisor: 'AGRICOLA LA FRONTERA LIMITADA',
-      giroEmisor: 'CULTIVO DE PRODUCTOS AGRICOLAS EN COMBINACION CON LA CRIA DE ANIMALES',
-      fchResol: '2024-04-08',
-      nroResol: 0,
+      rutEnvia: String(excelDataObject[0][cN().rutEnvia]).toUpperCase().trim(),
+      rutReceptor: String(excelDataObject[0][cN().rutReceptor]).toUpperCase().trim(),
+      rznSocEmisor: String(excelDataObject[0][cN().rznSocEmisor]).split(/\s+/).join(' ').trim().slice(0, 100),
+      giroEmisor: String(excelDataObject[0][cN().giroEmisor]).split(/\s+/).join(' ').trim().slice(0, 80),
+      fchResol: String(excelDataObject[0][cN().fchResol]).toUpperCase().trim(),
+      nroResol: excelDataObject[0][cN().nroResol],
       tipoDte: 39,
-      indServicio: 3,
+      indServicio: excelDataObject[0][cN().indServicio],
     };
   } catch (error) {
     console.log(`ERROR: Failed to get company data ${error}`);
@@ -41,6 +43,17 @@ async function getCompanyData() {
 
 function cN() {
   return {
+    detalleNmbCargoFijo: 'Cargo Fijo',
+    detalleDscCargoFijo: 'Costo Fijo Mensual',
+    detalleNmbAgua: 'Agua',
+    detalleDscAgua: 'Consumo de Agua Potable',
+    detalleNmbAlcantarillado: 'Alcantarillado',
+    detalleDscAlcantarillado: 'Recoleccion de Aguas Servidas',
+    detalleNmbTratamiento: 'Tratamiento',
+    detalleDscTratamiento: 'Tratamiento de Aguas Servidas',
+
+    number: 'N#',
+    isFactura: 'Recibe Factura',
     rutEmisor: 'RUT Empresa',
     rznSocEmisor: 'Razon Social Empresa',
     giroEmisor: 'Giro Empresa',
@@ -50,7 +63,7 @@ function cN() {
     rutEnvia: 'RUT Representante Legal',
     rutReceptor: 'RUT SII',
     numero: 'N#',
-    cdgInterno: 'Numero Cliente',
+    cdgIntRecep: 'Numero Cliente',
     rznSocRecep: 'Nombre',
     dirRecep: 'Direccion',
     cmnaRecep: 'Comuna',

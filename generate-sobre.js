@@ -3,16 +3,22 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { create } = require('xmlbuilder2');
-const { getExpiryDteFormattedDate } = require('./util-date.js');
+const {
+  getExpiryDteFormattedDate,
+  getIssueDteFormattedDate,
+  getHastaDteFormattedDate,
+  getDesdeDteFormattedDate,
+  getTedFormattedTimeStamp,
+} = require('./util-date.js');
 const { getSheetData, cN } = require('./database.js');
 const { generateCer } = require('./extract-keys.js');
 const paths = require('./paths.js');
 
 const primerFolioDisponiblePath = paths.getPrimerFolioDisponiblePath();
 
-const cafPath = paths.getCafPath();
-const cafPrivateKeyPath = paths.getCafPrivateKeyPath();
-const templatePath = paths.getTemplateFile39Path();
+const cafPath = paths.getCaf39Path();
+const cafPrivateKeyPath = paths.getCaf39PrivateKeyPath();
+const templatePath = paths.getTemplate39Path();
 const cantidadFoliosEmitidosPath = paths.getCantidadFoliosEmitidosPath();
 const montoNetoBoletasPath = paths.getMontoNetoBoletasPath();
 const montoIvaBoletasPath = paths.getMontoIvaBoletasPath();
@@ -22,22 +28,25 @@ const montoTotalBoletasPath = paths.getMontoTotalBoletasPath();
 let dteClientData;
 
 function addDetalle(detalleObjectArray, nroLinDet, qtyItem, unmdItem) {
-  detalleObjectArray.forEach(detalle => {
-    dteClientData.Detalle.push({
-      NroLinDet: nroLinDet++,
-      NmbItem: detalle.nmbItem,
-      DscItem: detalle.dscItem,
-      QtyItem: detalle.nmbItem === 'Cargo Fijo' ? 1 : qtyItem,
-      UnmdItem: detalle.nmbItem === 'Cargo Fijo' ? null : unmdItem,
-      PrcItem: detalle.prcItem,
-      MontoItem: detalle.montoItem,
+  if (qtyItem) {
+    detalleObjectArray.forEach(detalle => {
+      dteClientData.Detalle.push({
+        NroLinDet: nroLinDet++,
+        NmbItem: detalle.nmbItem,
+        DscItem: detalle.dscItem,
+        QtyItem: qtyItem,
+        UnmdItem: unmdItem,
+        PrcItem: detalle.prcItem,
+        MontoItem: detalle.montoItem,
+      });
     });
-  });
+  }
+  return nroLinDet;
 }
 
 function addDscRcg(dscRcgObject, nroLinDR) {
   dscRcgObject.forEach(dscRcg => {
-    if (dscRcg.ValorDR) {
+    if (dscRcg.valorDR) {
       dteClientData.DscRcgGlobal.push({
         NroLinDR: nroLinDR++,
         TpoMov: dscRcg.tpoMov,
@@ -52,7 +61,7 @@ function addDscRcg(dscRcgObject, nroLinDR) {
 
 async function buildClientDte() {
   try {
-    const excelDataObject = await getSheetData('test');
+    const excelDataObject = await getSheetData(0); // 0 = main excel, 1 = test excel
 
     // Read the CAF.xml file as utf8
     const cafFileContents = await fs.readFile(cafPath, 'utf8');
@@ -65,42 +74,50 @@ async function buildClientDte() {
     let cafPrivateKey = cafFileObject.AUTORIZACION.RSASK;
     await fs.writeFile(cafPrivateKeyPath, cafPrivateKey);
 
+    let nroTotalBoletas = 0;
+    for (const [_, number] of excelDataObject.entries()) {
+      if (!number[cN().number]) break;
+      nroTotalBoletas++;
+    }
+
+    console.log(nroTotalBoletas);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////FIXED DATA//////////////////////////////////////////////////////
 
-    let nroTotalBoletas = 0;
+    let montoTotalBoletas = 0;
     let montoNetoBoletas = 0;
     let montoIvaBoletas = 0;
     let montoExentoBoletas = 0;
-    let montoTotalBoletas = 0;
-    for (const [_, number] of excelDataObject.entries()) {
-      nroTotalBoletas++;
-      if (!number.Numero) break;
-    }
 
-    const rutEmisor = String(excelDataObject[0][cN.rutEmisor]).toUpperCase().trim();
-    const rznSocEmisor = String(excelDataObject[0][cN().rznSocEmisor]).split(/\s+/).join(' ').trim().slice(0, 70);
-    const giroEmisor = String(excelDataObject[0][cN().giroEmisor]).split(/\s+/).join(' ').trim().slice(0, 70);
+    const rutEmisor = String(excelDataObject[1][cN().rutEmisor]).toUpperCase().trim();
+    console.log();
+    const rznSocEmisor = String(excelDataObject[1][cN().rznSocEmisor]).split(/\s+/).join(' ').trim().slice(0, 100);
+    const giroEmisor = String(excelDataObject[1][cN().giroEmisor]).split(/\s+/).join(' ').trim().slice(0, 80);
     const tipoDte = 39;
-    const indServicio = excelDataObject[0][cN().indServicio];
+    const indServicio = excelDataObject[1][cN().indServicio];
     const rutProvSw = rutEmisor;
-    const rutEnvia = String(excelDataObject[0][cN.rutEnvia]).toUpperCase().trim();
-    const rutReceptor = String(excelDataObject[0][cN.rutReceptor]).toUpperCase().trim();
-    const fchResol = String(excelDataObject[0][cN.fchResol]).toUpperCase().trim();
-    const nroResol = excelDataObject[0][cN().nroResol];
+    const rutEnvia = String(excelDataObject[1][cN().rutEnvia]).toUpperCase().trim();
+    const rutReceptor = String(excelDataObject[1][cN().rutReceptor]).toUpperCase().trim();
+    const fchResol = String(excelDataObject[1][cN().fchResol]).toUpperCase().trim();
+    const nroResol = excelDataObject[1][cN().nroResol];
+    const periodoDesde = getDesdeDteFormattedDate();
+    const periodoHasta = getHastaDteFormattedDate();
+    const fchEmis = getIssueDteFormattedDate();
     const fchVenc = getExpiryDteFormattedDate();
-    const fchEmis = '@!FECHA!@';
-    const timeStamp = '@!TIMESTAMP!@';
+    const timeStamp = getTedFormattedTimeStamp();
     const firmaSig = '@!FRMT-SIG!@';
     const signature = '@!SIGNATURE!@';
     const nroDte = '@!NUM-DTE!@';
     const dteSet = '@!SET-OF-DTE!@';
+    console.log(getIssueDteFormattedDate());
 
     let folio = Number(await fs.readFile(primerFolioDisponiblePath, 'binary'));
     let dtePath;
-    const nroBoletas = 5;
+    let currentBoleta = 1;
+    const nroBoletas = 30;
     for (let i = 0; i < nroBoletas; i++) {
-      dtePath = path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'unsigned', `dte${i + 1}.xml`);
+      if (excelDataObject[i][cN().isFactura]) continue;
+      dtePath = path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'unsigned', `dte${currentBoleta}.xml`);
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //////////////////////////////////////////////////////DATA//////////////////////////////////////////////////////
@@ -111,7 +128,7 @@ async function buildClientDte() {
       const rutRecep = String(excelDataObject[i][cN().rutRecep]).toUpperCase().trim();
       const cdgIntRecep = String(excelDataObject[i][cN().cdgIntRecep]).trim();
       const rznSocRecep = String(excelDataObject[i][cN().rznSocRecep]).split(/\s+/).join(' ').trim();
-      // const Contacto = String(excelDataObject[i][cN().correo]).trim();
+      const correo = excelDataObject[i][cN().correo] ? String(excelDataObject[i][cN().correo]).trim() : null;
       const dirRecep = String(excelDataObject[i][cN().dirRecep]).split(/\s+/).join(' ').trim();
       const ciudadRecep = String(excelDataObject[i][cN().ciudadRecep]).split(/\s+/).join(' ').trim();
       const cmnaRecep = String(excelDataObject[i][cN().cmnaRecep]).toUpperCase().trim();
@@ -122,9 +139,8 @@ async function buildClientDte() {
       const mntExe = excelDataObject[i][cN().mntExe] ? Number(excelDataObject[i][cN().mntExe]) : null;
       const saldoAnterior = Number(excelDataObject[i][cN().saldoAnterior]);
       const vlrPagar = Number(excelDataObject[i][cN().vlrPagar]);
-
       const descuento = Number(excelDataObject[i][cN().descuento]);
-      const subsidio = Number(excelDataObject[i][cN().subsidio]);
+      const subsidio = Math.abs(Number(excelDataObject[i][cN().subsidio]));
       const repactacion = Number(excelDataObject[i][cN().repactacion]);
       const reposicion = Number(excelDataObject[i][cN().reposicion]);
       const multa = Number(excelDataObject[i][cN().multa]);
@@ -132,31 +148,43 @@ async function buildClientDte() {
       const qtyItem = Number(excelDataObject[i][cN().consumoM3]);
       const unmdItem = 'M3';
 
-      const detalleObject = [
+      const detalleObjectArray = [
         {
-          NmbItem: 'Agua',
-          DscItem: 'Consumo de Agua Potable',
-          PrcItem: Number(excelDataObject[i][cN().costoM3Agua]),
-          MontoItem: Number(excelDataObject[i][cN().costoTotalAgua]),
+          nmbItem: cN().detalleNmbAgua,
+          dscItem: cN().detalleDscAgua,
+          prcItem: Number(excelDataObject[i][cN().costoM3Agua]),
+          montoItem: Number(excelDataObject[i][cN().costoTotalAgua]),
         },
         {
-          NmbItemo: 'Alcantarillado',
-          DscItem: 'Recoleccion de Aguas Servidas',
-          PrcItem: Number(excelDataObject[i][cN().costoM3Alcantarillado]),
-          MontoItem: Number(excelDataObject[i][cN().costoTotalAlcantarillado]),
+          nmbItem: cN().detalleNmbAlcantarillado,
+          dscItem: cN().detalleDscAlcantarillado,
+          prcItem: Number(excelDataObject[i][cN().costoM3Alcantarillado]),
+          montoItem: Number(excelDataObject[i][cN().costoTotalAlcantarillado]),
         },
         {
-          NmbItem: 'Tratamiento',
-          DscItem: 'Tratamiento de Aguas Servidas',
-          PrcItem: Number(excelDataObject[i][cN().costoM3Tratamiento]),
-          MontoItem: Number(excelDataObject[i][cN().costoTotalTratamiento]),
+          nmbItem: cN().detalleNmbTratamiento,
+          dscItem: cN().detalleDscTratamiento,
+          prcItem: Number(excelDataObject[i][cN().costoM3Tratamiento]),
+          montoItem: Number(excelDataObject[i][cN().costoTotalTratamiento]),
         },
+      ];
+
+      const cargoFijoObjectArray = [
         {
-          NmbItem: 'Cargo Fijo',
-          DscItem: 'Cargo Fijo',
-          PrcItem: Number(excelDataObject[i][cN().cargoFijo]),
-          MontoItem: Number(excelDataObject[i][cN().cargoFijo]),
+          nmbItem: cN().detalleNmbCargoFijo,
+          dscItem: cN().detalleDscCargoFijo,
+          qtyItem: 1,
+          prcItem: Number(excelDataObject[i][cN().cargoFijo]),
+          montoItem: Number(excelDataObject[i][cN().cargoFijo]),
         },
+      ];
+
+      const dscRcgObject = [
+        { tpoMov: 'D', glosaDR: cN().descuento, tpoValor: '$', valorDR: descuento },
+        { tpoMov: 'R', glosaDR: cN().reposicion, tpoValor: '$', valorDR: reposicion },
+        { tpoMov: 'R', glosaDR: cN().multa, tpoValor: '$', valorDR: multa },
+        { tpoMov: 'D', glosaDR: cN().subsidio, tpoValor: '$', valorDR: subsidio, indExeDR: 1 },
+        { tpoMov: 'R', glosaDR: cN().repactacion, tpoValor: '$', valorDR: repactacion, indExeDR: 1 },
       ];
 
       montoNetoBoletas += mntNeto;
@@ -173,6 +201,8 @@ async function buildClientDte() {
             Folio: folio,
             FchEmis: fchEmis,
             IndServicio: indServicio,
+            PeriodoDesde: periodoDesde,
+            PeriodoHasta: periodoHasta,
             FchVenc: fchVenc,
           },
           Emisor: {
@@ -182,7 +212,9 @@ async function buildClientDte() {
           },
           Receptor: {
             RUTRecep: rutRecep,
+            CdgIntRecep: cdgIntRecep,
             RznSocRecep: rznSocRecep,
+            Contacto: correo,
             DirRecep: dirRecep,
             CmnaRecep: cmnaRecep,
             CiudadRecep: ciudadRecep,
@@ -192,18 +224,21 @@ async function buildClientDte() {
             MntExe: mntExe,
             IVA: iva,
             MntTotal: mntTotal,
+            SaldoAnterior: saldoAnterior,
+            VlrPagar: vlrPagar,
           },
         },
         Detalle: [],
         DscRcgGlobal: [],
-        Referencia: {
-          NroLinRef: nroLinRef,
-          CodRef: codRef,
-          RazonRef: razonRef,
-        },
-        // RUTProvSW,
+        // Referencia: {
+        //   NroLinRef: nroLinRef,
+        //   CodRef: codRef,
+        //   RazonRef: razonRef,
+        // },
       };
-      addDetalle(detalleObject, nroLinDet);
+      nroLinDet = addDetalle(detalleObjectArray, nroLinDet, qtyItem, unmdItem);
+      addDetalle(cargoFijoObjectArray, nroLinDet, 1);
+      addDscRcg(dscRcgObject, nroLinDR);
 
       //////////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////CLIENT TED JSON//////////////////////////////////
@@ -216,7 +251,7 @@ async function buildClientDte() {
           RR: rutRecep,
           RSR: rznSocRecep,
           MNT: mntTotal,
-          IT1: detalleObject[0].nmbItem,
+          IT1: cN().detalleDscAgua,
           CAF: cafObject.CAF,
           TSTED: timeStamp,
         },
@@ -253,6 +288,7 @@ async function buildClientDte() {
 
       folio++;
       nroLinRef++;
+      currentBoleta++;
     }
 
     // Create Document from the DteSobreObject, addding required attributes

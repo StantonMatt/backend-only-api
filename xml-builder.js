@@ -70,7 +70,7 @@
 //     const RUTProvSW = String(excelDataObject[0].RUTEmisor).toUpperCase().trim();
 //     const RutEnvia = '5657540-5';
 //     const RutReceptor = '60803000-K';
-//     const FchResol = '30-12-2020';
+//     const FchResol = '2020-12-30';
 //     const NroResol = 0;
 //     const TmstFirmaEnv = getTedFormattedTimeStamp();
 //     const TpoDTE = TipoDTE;
@@ -359,9 +359,9 @@
 
 // const primerFolioDisponiblePath = paths.getPrimerFolioDisponiblePath();
 
-// const cafPath = paths.getCafPath();
-// const cafPrivateKeyPath = paths.getCafPrivateKeyPath();
-// const templatePath = paths.getTemplateFile39Path();
+// const cafPath = paths.getCaf39Path();
+// const cafPrivateKeyPath = paths.getCaf39PrivateKeyPath();
+// const templatePath = paths.getTemplate39Path();
 // const cantidadFoliosEmitidosPath = paths.getCantidadFoliosEmitidosPath();
 // const montoNetoBoletasPath = paths.getMontoNetoBoletasPath();
 // const montoIvaBoletasPath = paths.getMontoIvaBoletasPath();
