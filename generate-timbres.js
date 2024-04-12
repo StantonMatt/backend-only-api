@@ -9,7 +9,7 @@ const signedBoletaDteFolderPath = paths.getSignedBoletaDteFolderPath();
 const timbresBoletaFolderPath = paths.getTimbresBoletaFolderPath();
 const barrasBoletaFolderPath = paths.getBarrasBoletaFolderPath();
 
-async function generateTed() {
+async function generateBarcodes() {
   try {
     const files = await fs.readdir(signedBoletaDteFolderPath);
     for (const [index, file] of files.entries()) {
@@ -58,4 +58,4 @@ async function generateTed() {
   }
 }
 
-module.exports = { generateTed };
+module.exports = { generateBarcodes };

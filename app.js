@@ -6,7 +6,7 @@ const { signXml } = require('./signer.js');
 const { waitForFileReady, clearOldFiles } = require('./util-file.js');
 const { getFormData } = require('./generate-form.js');
 const { buildRcof } = require('./generate-rcof.js');
-const { generateTed } = require('./generate-timbres.js');
+const { generateBarcodes } = require('./generate-timbres.js');
 
 const { promisify } = require('util');
 const { exec } = require('child_process');
@@ -51,7 +51,7 @@ let trackid;
     await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
     await compileAndSignSobre();
     await buildRcof();
-    await generateTed();
+    await generateBarcodes();
     // await postSignedSobreXml();
     // await getStatus();
   } catch (error) {
