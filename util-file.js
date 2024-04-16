@@ -1,5 +1,6 @@
 'use strict';
 
+const { log } = require('console');
 const fs = require('fs-extra');
 const path = require('path');
 
@@ -9,6 +10,7 @@ async function waitForFileReady(filePath, timeout = 30000) {
 
   while (Date.now() - start < timeout) {
     try {
+      const logOutput = [];
       const stats = await fs.stat(filePath);
       if (size === null) {
         size = stats.size;
@@ -56,17 +58,31 @@ async function tryDelete(filePath, attempts = 5) {
 
 async function clearOldFiles(folderPathsArray) {
   try {
+    let logOutput = [];
     for (const folderPath of folderPathsArray) {
       const files = await fs.readdir(folderPath);
       for (const file of files) {
         const filePath = path.join(folderPath, file);
         await tryDelete(filePath);
       }
-      console.log(`Old ${folderPath.slice(folderPath.lastIndexOf('\\') + 1)} files deleted: ${files.length}`);
+      logOutput.push(`${folderPath.slice(folderPath.lastIndexOf('\\') + 1)} files deleted: ${files.length}`);
+      console.log(`${folderPath.slice(folderPath.lastIndexOf('\\') + 1)} files deleted: ${files.length}`);
     }
+    return logOutput;
   } catch (error) {
     console.log(`Error deleting files: ${error}`);
   }
 }
 
-module.exports = { waitForFileReady, clearOldFiles };
+async function checkFileExists(file) {
+  try {
+    await fs.access(file, fs.constants.F_OK);
+    console.log('Files found');
+    return true;
+  } catch (error) {
+    console.log(`ERROR: The file does not exist: ${error}`);
+    return false;
+  }
+}
+
+module.exports = { waitForFileReady, clearOldFiles, checkFileExists };

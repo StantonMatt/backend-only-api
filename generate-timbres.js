@@ -52,9 +52,13 @@ async function generateBarcodes() {
       }
     }
 
-    console.log(`Timbres successfully saved to drive`);
+    const logGenerateBarcodes = `Barcodes successfully saved to drive`;
+    console.log(logGenerateBarcodes);
+    return logGenerateBarcodes;
   } catch (error) {
-    console.log(`ERROR: Failed to generate PDF417 Timbres: ${error}`);
+    const logError = `ERROR: Failed to generate PDF417 Timbres: ${error}`;
+    console.log(logError);
+    return logError;
   }
 }
 

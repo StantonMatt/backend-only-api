@@ -112,8 +112,12 @@ async function buildRcof() {
     const rcofXml = cofDoc.end({ prettyPrint: true });
     const signedRcofXml = await signXml(rcofXml, 'DocumentoConsumoFolios', `http://www.w3.org/TR/2001/REC-xml-c14n-20010315`);
 
-    // await fs.writeFile(rcofXmlPath, rcofXml);
     await fs.writeFile(rcofXmlPath, signedRcofXml);
+
+    const logBuildRcof = `RCOF created and signed successfully`;
+    console.log(logBuildRcof);
+
+    return logBuildRcof;
   } catch (error) {
     console.log(`ERROR: Problem building RCOF: ${error}`);
   }

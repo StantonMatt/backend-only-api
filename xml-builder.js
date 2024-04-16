@@ -12,8 +12,8 @@
 // const { getClientData } = require('./database.js');
 // const { runServer } = require('./server.js');
 // const { getTodayDteFormattedDate, getExpiryDteFormattedDate, getTedFormattedTimeStamp } = require('./util-date.js');
-// const folioPath = path.join(__dirname, 'assets', 'folio_disponible.txt');
-// const cafPath = path.join(__dirname, 'assets', 'CAFCOAB.xml');
+// const folioPath = path.join(__dirname, 'public', 'folio_disponible.txt');
+// const cafPath = path.join(__dirname, 'public', 'CAFCOAB.xml');
 // const privateKeyPath = path.join(__dirname, 'temp', 'output', 'private_key.pem');
 // const publicCertPath = path.join(__dirname, 'temp', 'output', 'certificate.pem');
 
@@ -449,7 +449,7 @@
 //     let dtePath;
 //     const nroBoletas = 5;
 //     for (let i = 0; i < nroBoletas; i++) {
-//       dtePath = path.join(__dirname, 'assets', 'output', 'boletas', 'dtes', 'unsigned', `dte${i + 1}.xml`);
+//       dtePath = path.join(__dirname, 'public', 'output', 'boletas', 'dtes', 'unsigned', `dte${i + 1}.xml`);
 
 //       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       //////////////////////////////////////////////////////DATA//////////////////////////////////////////////////////

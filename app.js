@@ -1,7 +1,7 @@
 'use strict';
 
 const paths = require('./paths.js');
-const { buildClientDte } = require('./generate-sobre.js');
+const { buildClientDte } = require('./generate-dtes.js');
 const { signXml } = require('./signer.js');
 const { waitForFileReady, clearOldFiles } = require('./util-file.js');
 const { getFormData } = require('./generate-form.js');
@@ -38,33 +38,35 @@ const envioUrl = '/boleta.electronica.envio';
 let token;
 let trackid;
 
-(async function run() {
-  try {
-    await clearOldFiles(foldersToDelete);
-    const semillaData = await getSemilla();
-    const semilla = await processSemillaResponse(semillaData);
-    const semillaXml = await createSemillaXml(semilla);
-    const signedSemillaXml = await signSemillaXml(semillaXml);
-    const tokenData = await getToken(signedSemillaXml);
-    await processTokenResponse(tokenData);
-    await generateDteXmls();
-    await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
-    await compileAndSignSobre();
-    await buildRcof();
-    await generateBarcodes();
-    // await postSignedSobreXml();
-    // await getStatus();
-  } catch (error) {
-    console.error(`An error occurred: ${error.message}`);
-    // Handle the error appropriately, perhaps by retrying or aborting the process
-  }
-})();
+// (async function run() {
+//   try {
+//     await clearOldFiles(foldersToDelete);
+//     const semillaData = await getSemilla();
+//     const semilla = await processSemillaResponse(semillaData);
+//     const semillaXml = await createSemillaXml(semilla);
+//     const signedSemillaXml = await signSemillaXml(semillaXml);
+//     const tokenData = await getToken(signedSemillaXml);
+//     await processTokenResponse(tokenData);
+//     await generateDteXmls();
+//     await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
+//     await compileAndSignSobre();
+//     await buildRcof();
+//     await generateBarcodes();
+//     // await postSignedSobreXml();
+//     // await getStatus();
+//   } catch (error) {
+//     console.error(`An error occurred: ${error.message}`);
+//     // Handle the error appropriately, perhaps by retrying or aborting the process
+//   }
+// })();
 
 async function getSemilla() {
   try {
     const response = await axios.get(`${baseUrl}${semillaUrl}`);
-    console.log(`Semilla request success...`);
-    return response.data;
+    const semillaData = response.data;
+    const getSemillaLog = `Semilla request success...`;
+    console.log(getSemillaLog);
+    return { semillaData, getSemillaLog };
   } catch (error) {
     console.log(`Error fetching seed: ${error}`);
     throw error;
@@ -75,8 +77,9 @@ async function processSemillaResponse(semillaData) {
   try {
     const semillaObject = convert(semillaData, { format: 'object' });
     const semilla = semillaObject['SII:RESPUESTA']['SII:RESP_BODY'].SEMILLA;
-    console.log(`Semilla value extracted: ${semilla}`);
-    return semilla;
+    const processSemillaResponseLog = `Semilla value extracted: ${semilla}`;
+    console.log(processSemillaResponseLog);
+    return { semilla, processSemillaResponseLog };
   } catch (error) {
     console.error('Error processing semilla response:', error);
   }
@@ -85,9 +88,10 @@ async function processSemillaResponse(semillaData) {
 async function createSemillaXml(semilla) {
   try {
     const semillaDoc = create({ version: '1.0', encoding: 'UTF-8' }).ele('getToken').ele('item').ele('Semilla').txt(semilla);
-
     const semillaXml = semillaDoc.end();
-    return semillaXml;
+    const createSemillaXmlLog = 'Creating semillaXml...';
+    console.log(createSemillaXmlLog);
+    return { semillaXml, createSemillaXmlLog };
   } catch (error) {
     console.log(`ERROR: Creating XML: ${error}`);
   }
@@ -96,9 +100,10 @@ async function createSemillaXml(semilla) {
 async function signSemillaXml(semillaXml) {
   try {
     const signedSemillaXml = await signXml(semillaXml, 'item', `http://www.w3.org/2000/09/xmldsig#enveloped-signature`);
-    console.error(`Semilla signing success...`);
+    const signSemillaXmlLog = `Semilla signing success...`;
+    console.log(signSemillaXmlLog);
     await fs.writeFile(signedSemillaXmlPath, signedSemillaXml);
-    return signedSemillaXml;
+    return { signedSemillaXml, signSemillaXmlLog };
   } catch (error) {
     console.error(`Semilla signing failed: ${error}`);
   }
@@ -109,10 +114,13 @@ async function getToken(signedSemillaXml) {
     const response = await axios.post(`${baseUrl}${tokenUrl}`, signedSemillaXml, {
       headers: { 'Content-Type': 'application/xml' },
     });
-    console.log('Token request success...');
-    return response.data;
+    const tokenData = response.data;
+    const getTokenLog = 'Token request success...';
+    console.log(getTokenLog);
+    return { tokenData, getTokenLog };
   } catch (error) {
-    console.log('Token post request failed:', error.response);
+    const getTokenLog = `ERROR: getToken() failed: ${error.response}`;
+    console.log(getTokenLog);
   }
 }
 
@@ -120,7 +128,9 @@ async function processTokenResponse(tokenData) {
   try {
     const tokenObject = convert(tokenData, { format: 'object' });
     token = tokenObject['SII:RESPUESTA']['SII:RESP_BODY'].TOKEN;
-    console.log(`Token value extracted: ${token}`);
+    const processTokenResponseLog = `Token value extracted: ${token}`;
+    console.log(processTokenResponseLog);
+    return { token, processTokenResponseLog };
   } catch (error) {
     console.error('Error processing token response:', error);
   }
@@ -183,3 +193,5 @@ async function getStatus() {
     console.error(`Failed request:\n${error.response ? error.response.data : error.message}\n-----------------------\n`);
   }
 }
+
+module.exports = { getSemilla, processSemillaResponse, createSemillaXml, signSemillaXml, getToken, processTokenResponse };
