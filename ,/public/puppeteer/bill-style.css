@@ -1,0 +1,126 @@
+/* Base and Reset Styles */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #f4f4f4; /* Light grey background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Arial", sans-serif;
+}
+
+/* Document Container: Mimics A4 paper */
+.document-container {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 5mm;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Adds shadow for better visibility */
+  background: #fff; /* White background for the 'paper' */
+  box-sizing: border-box;
+  /* For a section with two columns */
+}
+.document-container .bill-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  border-radius: 10px;
+}
+.document-container .bill-container .bill-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  grid-column: 1/-1; /* Makes it span all columns */
+  border-bottom: 2px solid #000;
+}
+.document-container .bill-container .bill-header .logo-container {
+  color: #090557;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.document-container .bill-container .bill-header .logo-container p {
+  line-height: 0;
+  font-size: 70px;
+}
+.document-container .bill-container .bill-header .logo-container img {
+  width: 150px;
+  font-weight: bold;
+  font-size: 2em;
+}
+.document-container .bill-container .bill-header .recuadro {
+  padding: 10px 40px;
+  font-weight: bold;
+  text-align: center;
+  border: 3px solid #323144;
+}
+.document-container .bill-container .bill-header .recuadro p,
+.document-container .bill-container .bill-header .recuadro h3 {
+  margin: 0;
+  padding: 0;
+}
+.document-container .bill-container .bill-header .sucursal {
+  padding: 5px 0px;
+  font-weight: bold;
+  text-align: center;
+}
+.document-container .bill-container .bill-header .sucursal p {
+  margin: 0;
+  padding: 0;
+}
+.document-container .bill-container .bill-header .codigo-barra {
+  max-width: 10px;
+}
+.document-container .customer-info,
+.document-container .bill-details {
+  background-color: #f2f2f2;
+  padding: 10px;
+}
+.document-container .bill-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.document-container .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #000;
+}
+.document-container .logo {
+  font-size: 24px;
+  font-weight: bold;
+}
+.document-container .bill-info,
+.document-container .customer-info,
+.document-container .bill-summary,
+.document-container .consumption-details,
+.document-container .payment-methods,
+.document-container .warning,
+.document-container .footer {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+.document-container .bill-info div,
+.document-container .customer-info div,
+.document-container .bill-summary div,
+.document-container .consumption-details div,
+.document-container .payment-methods div {
+  margin-bottom: 10px;
+}
+.document-container .warning {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+.document-container .footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+}
+
+/* Add additional styles as needed to match the utility bill's appearance */
+
+/*# sourceMappingURL=bill-style.css.map */
