@@ -2,8 +2,8 @@
   "events": {
     "restart": "node clear-console.js"
   },
-  "watch": ["server.js", "public/"],
+  "watch": ["*.js", "public"],
   "ext": "js, html, scss",
-  "ignore": ["node_modules/"],
-  "exec": "sass ./public/puppeteer/bill-style.scss:./public/puppeteer/bill-style.css"
+  "ignore": ["node_modules/", "public/puppeteer/style"],
+  "exec": "sass ./public/puppeteer/bill-style.scss:./public/puppeteer/style/bill-style.css && node server.js"
 }

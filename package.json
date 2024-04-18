@@ -4,11 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "compile-sass": "sass --watch scss:css",
-    "start-server": "nodemon",
-    "start": "nodemon",
-    "builder": "nodemon xml-builder",
-    "dev": "nodemon generate-rcof"
+    "start": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
