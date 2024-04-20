@@ -13,6 +13,7 @@
     "@chilkat/ck-node20-win64": "^9.5098.0",
     "axios": "^1.6.8",
     "bwip-js": "^4.3.2",
+    "chart.js": "^4.4.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "form-data": "^4.0.0",
