@@ -27,7 +27,10 @@ const getSignedBoletaDteFolderPath = () => path.join(__dirname, 'public', 'outpu
 const getUnsignedBoletaDteFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'dtes', 'unsigned');
 
 const getTimbresBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'timbres');
+
 const getBarrasBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'barras');
+
+const getGraphsBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'graphs');
 
 const getSobreBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'sobres');
 const getPDFBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'pdfs');
@@ -69,6 +72,7 @@ module.exports = {
   getUnsignedBoletaDteFolderPath,
   getTimbresBoletaFolderPath,
   getBarrasBoletaFolderPath,
+  getGraphsBoletaFolderPath,
   getSobreBoletaFolderPath,
   getPDFBoletaFolderPath,
   getDllPath,

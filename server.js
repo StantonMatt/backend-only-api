@@ -12,6 +12,7 @@ const { buildRcof } = require('./generate-rcof.js');
 const { generateBarcodes } = require('./generate-timbres.js');
 const { compileAndSignSobre } = require('./generate-sobre.js');
 const { generatePDF } = require('./generate-pdf.js');
+const { generateChart } = require('./generate-chart.js');
 
 const pdfPath = paths.getPDFBoletaFolderPath();
 const pdfFilePath = path.join(pdfPath + '/Utility-Bil.pdf');
@@ -37,7 +38,8 @@ app.use(express.json());
 app.post('/api/process-data', async (req, res) => {
   res.json(req.body);
   console.log(req.body);
-  await generatePDF(req.body);
+  await generateChart(req.body);
+  await generatePDF();
 });
 
 app.get('/api/list', (req, res) => {
