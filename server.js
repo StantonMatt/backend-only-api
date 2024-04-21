@@ -13,13 +13,8 @@ const { generateBarcodes } = require('./generate-timbres.js');
 const { compileAndSignSobre } = require('./generate-sobre.js');
 const { generatePDF } = require('./generate-pdf.js');
 
-const pdfPath = paths.getSobreBoletaFolderPath();
-const pdfFilePath = path.join(pdfPath + 'pdftest.pdf');
-(async function () {
-  const file = await generatePDF({ clientName: 'John', period: 444, amountDue: 1234 });
-  console.log(file);
-  await fs.writeFile(pdfFilePath, file);
-})();
+const pdfPath = paths.getPDFBoletaFolderPath();
+const pdfFilePath = path.join(pdfPath + '/Utility-Bil.pdf');
 
 const signedBoletaDtePath = paths.getSignedBoletaDteFolderPath();
 const unsignedBoletaDtePath = paths.getUnsignedBoletaDteFolderPath();
@@ -39,8 +34,10 @@ app.use('/files', express.static('public'));
 
 app.use(express.json());
 
-app.post('/api/process-data', (req, res) => {
+app.post('/api/process-data', async (req, res) => {
   res.json(req.body);
+  console.log(req.body);
+  await generatePDF(req.body);
 });
 
 app.get('/api/list', (req, res) => {

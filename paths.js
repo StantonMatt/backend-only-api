@@ -30,6 +30,7 @@ const getTimbresBoletaFolderPath = () => path.join(__dirname, 'public', 'output'
 const getBarrasBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'barras');
 
 const getSobreBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'sobres');
+const getPDFBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'pdfs');
 
 const getDllPath = () => path.join(__dirname, 'public', 'cryptosys', 'net6.0', 'MakeEnvio.dll');
 
@@ -69,6 +70,7 @@ module.exports = {
   getTimbresBoletaFolderPath,
   getBarrasBoletaFolderPath,
   getSobreBoletaFolderPath,
+  getPDFBoletaFolderPath,
   getDllPath,
   getTemplate39Path,
   getSobreBoletaFolderPath,

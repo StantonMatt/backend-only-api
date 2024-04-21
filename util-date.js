@@ -55,7 +55,7 @@ function getTedFormattedTimeStamp() {
 
 function getFormattedTimeStamp() {
   const today = new Date();
-  const date = getTodayDteFormattedDate(today);
+  const date = getTodayDteFormattedDate();
   const hour = String(today.getHours()).padStart(2, 0);
   const minutes = String(today.getMinutes()).padStart(2, 0);
   const seconds = String(today.getSeconds()).padStart(2, 0);
@@ -65,6 +65,33 @@ function getFormattedTimeStamp() {
   }).format(today);
   return `${date}T${hour}_${minutes}_${seconds}`;
 }
+
+function getChartMonths() {
+  let currentDate = new Date();
+  const chartDateArray = [];
+  for (let i = 0; i < 13; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    const month = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(date).slice(0, 3).toUpperCase();
+    const year = date.getFullYear();
+    chartDateArray.push(`${month}-${year}`);
+  }
+
+  return chartDateArray;
+}
+
+function getChartPreviousMonths() {
+  let currentDate = new Date();
+  const chartDateArray = [];
+  for (let i = 0; i < 13; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1 - i, 1);
+    const month = new Intl.DateTimeFormat('es-ES', { month: 'short' }).format(date).slice(0, 3).toUpperCase();
+    const year = date.getFullYear();
+    chartDateArray.push(`${month}-${year}`);
+  }
+
+  return chartDateArray;
+}
+
 module.exports = {
   getTodayDteFormattedDate,
   getExpiryDteFormattedDate,
@@ -73,4 +100,6 @@ module.exports = {
   getIssueDteFormattedDate,
   getDesdeDteFormattedDate,
   getHastaDteFormattedDate,
+  getChartMonths,
+  getChartPreviousMonths,
 };
