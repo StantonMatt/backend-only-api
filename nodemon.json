@@ -4,6 +4,6 @@
   },
   "watch": ["*.js", "public"],
   "ext": "js, html, scss",
-  "ignore": ["node_modules/", "public/puppeteer/style"],
+  "ignore": ["node_modules/", "public/puppeteer/style", "public/puppeteer/bill.html"],
   "exec": "sass ./public/puppeteer/bill-style.scss:./public/puppeteer/style/bill-style.css && node server.js"
 }

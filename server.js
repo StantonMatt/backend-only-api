@@ -39,7 +39,7 @@ app.post('/api/process-data', async (req, res) => {
   res.json(req.body);
   console.log(req.body);
   await generateChart(req.body);
-  await generatePDF();
+  await generatePDF(req.body);
 });
 
 app.get('/api/list', (req, res) => {
