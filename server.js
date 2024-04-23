@@ -37,7 +37,6 @@ app.use(express.json());
 
 app.post('/api/process-data', async (req, res) => {
   res.json(req.body);
-  console.log(req.body);
   await generateChart(req.body);
   await generatePDF(req.body);
 });

@@ -6,8 +6,6 @@ const fs = require('fs-extra');
 
 async function getFormData(file) {
   const data = await getCompanyData();
-  console.log(data);
-  console.log(file);
   const form = new FormData();
   form.append('rutSender', data.rutEnvia.slice(0, data.rutEnvia.indexOf('-')));
   form.append('dvSender', data.rutEnvia.slice(-1));
