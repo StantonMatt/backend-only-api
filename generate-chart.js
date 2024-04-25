@@ -16,33 +16,19 @@ const height = 1350; //px
 const backgroundColour = 'white';
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, backgroundColour, Chart: Chart });
 
-let chartDateArray = [];
-
 async function generateChart(data) {
-  const chartAreaBorder = {
-    id: 'chartAreaBorder',
-    beforeDraw(chart, args, options) {
-      const {
-        ctx,
-        chartArea: { left, top, width, height },
-      } = chart;
-      ctx.save();
-      ctx.strokeStyle = options.borderColor;
-      ctx.lineWidth = options.borderWidth;
-      ctx.setLineDash(options.borderDash || []);
-      ctx.lineDashOffset = options.borderDashOffset;
-      ctx.strokeRect(left, top, width, height);
-      ctx.restore();
-    },
-  };
+  const chartDateArray = [];
 
   if (data[`${util.getChartMonths()[0]}`]) {
-    chartDateArray = util.getChartMonths();
+    chartDateArray.push(...util.getChartMonths().reverse());
   } else {
-    chartDateArray = [...util.getChartPreviousMonths()];
+    chartDateArray.push(...util.getChartPreviousMonths().reverse());
   }
   const monthlyConsumption = chartDateArray.map(date => data[date]);
   const monthNames = chartDateArray.map(dates => dates.slice(0, 3));
+
+  const maxDataValue = Math.max(...monthlyConsumption);
+  const buffer = Math.max(1, Math.ceil(maxDataValue * 0.1));
 
   const configuration = {
     type: 'bar',
@@ -52,19 +38,19 @@ async function generateChart(data) {
         {
           data: monthlyConsumption,
           backgroundColor: [
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20acb923',
-            '#20c0983d',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#2095b92a',
+            '#20c0983a',
           ],
           borderColor: '#353535', // Specify border color
           borderWidth: 6, // Specify border width
@@ -84,15 +70,22 @@ async function generateChart(data) {
           },
         },
         y: {
+          beginAtZero: true,
+          suggestedMax: maxDataValue + buffer,
           grid: {
             display: false,
           },
           ticks: {
+            precision: 0,
+            callback: function (value, index, values) {
+              if (Math.floor(value) === value) {
+                return value;
+              }
+            },
             font: {
               size: 100, // Set the font size for x-axis labels
             },
           },
-          beginAtZero: true,
         },
       },
       plugins: {
@@ -102,10 +95,7 @@ async function generateChart(data) {
         datalabels: {
           color: '#343436',
           anchor: 'end',
-          align: 'bottom',
-          formatter: (value, context) => {
-            return value === 0 ? null : value; // Do not show label for value 0
-          },
+          align: 'top',
           font: {
             size: 90,
           },

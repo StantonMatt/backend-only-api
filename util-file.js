@@ -3,6 +3,13 @@
 const { log } = require('console');
 const fs = require('fs-extra');
 const path = require('path');
+const paths = require('./paths.js');
+
+const primerFolioDisponiblePath = paths.getPrimerFolioDisponiblePath();
+
+async function getPrimerFolioDisponible() {
+  return await fs.readFile(primerFolioDisponiblePath, 'utf8');
+}
 
 async function waitForFileReady(filePath, timeout = 30000) {
   const start = Date.now();
@@ -85,4 +92,4 @@ async function checkFileExists(file) {
   }
 }
 
-module.exports = { waitForFileReady, clearOldFiles, checkFileExists };
+module.exports = { getPrimerFolioDisponible, waitForFileReady, clearOldFiles, checkFileExists };

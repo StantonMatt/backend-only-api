@@ -1,106 +1,67 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
-const handlebars = require('handlebars');
+const Handlebars = require('handlebars');
 const fs = require('fs-extra');
-const { cN } = require('./database.js');
+const helper = require('./handlebar-helpers.js');
+const utilF = require('./util-file.js');
 
 const billHtmlTemplatePath = path.join(__dirname, 'public', 'puppeteer', 'bill-template.html');
 const billHtmlPath = path.join(__dirname, 'public', 'puppeteer', 'bill.html');
 
-// Register a helper for currency formatting
-handlebars.registerHelper('formatCurrency', function (value) {
-  // Convert the number to a string and format it as currency
-  if (!value) return '';
-  const number = parseFloat(value);
-  return new Intl.NumberFormat('es-CL').format(number);
-});
+Handlebars.registerHelper('formatCurrency', helper.formatCurrency);
 
-// Register a helper for currency formatting
-handlebars.registerHelper('formatCurrencyWithSymbol', function (value) {
-  // Convert the number to a string and format it as currency
-  const number = parseFloat(value);
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(number);
-});
+Handlebars.registerHelper('formatCurrencyWithSymbol', helper.formatCurrencyWithSymbol);
+
+Handlebars.registerHelper('omitTitleIfNil', helper.omitTitleIfNil);
+
+Handlebars.registerHelper('omitValueIfNil', helper.omitValueIfNil);
+
+Handlebars.registerHelper('addSpaceIfNotNil', helper.addSpaceIfNotNil);
+
+Handlebars.registerHelper('dateFormatter', helper.dateFormatter);
+
+Handlebars.registerHelper('subsidioPercentageFormatter', helper.subsidioPercentageFormatter);
+
+Handlebars.registerHelper('subsidioM3Formatter', helper.subsidioM3Formatter);
+
+Handlebars.registerHelper('repactacionCuotaFormatter', helper.repactacionCuotaFormatter);
+
+Handlebars.registerHelper('repactacionDeudaFormatter', helper.repactacionDeudaFormatter);
+
+let folio;
+
+(async function () {
+  folio = await utilF.getPrimerFolioDisponible();
+})();
 
 async function generatePDF(data) {
   try {
     const formattedData = {};
-    Object.keys(data).map(value => {
-      const newKey = value.replaceAll(' ', '_');
-      formattedData[newKey] = data[value];
+    // Object.keys(data).map(originalKey => {
+    //   const newKey = originalKey.replaceAll(' ', '_');
+    //   formattedData[newKey] = data[originalKey];
+    // });
+    Object.keys(data).map(originalKey => {
+      const newKey = originalKey
+        .toLowerCase()
+        .split(' ')
+        .map((word, index) => {
+          if (index > 0 && word) {
+            return word[0].toUpperCase() + word.slice(1);
+          }
+          return word;
+        })
+        .join('');
+      formattedData[newKey] = data[originalKey];
     });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('ifExistsBlank', function (value) {
-      let normalizedStr;
-      if (value) normalizedStr = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      else return '';
-      if (!data[`${normalizedStr}`]) return '';
-      else return value;
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('ifExistsSpace', function (value) {
-      let normalizedStr;
-      if (value) normalizedStr = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      else return '&nbsp;';
-      if (!data[`${normalizedStr}`]) return '';
-      else return '&nbsp;';
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('dateFormatter', function (dateStr) {
-      const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-      const date = new Date(`${dateStr}T12:00:00.000Z`);
-      console.log(dateStr);
-      console.log(date);
-      console.log(date.getDate());
-      const day = date.getDate().toString().padStart(2, '0');
-      const monthIndex = date.getMonth();
-      const year = date.getFullYear();
-      return `${day}-${months[monthIndex]}-${year}`;
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('subsidioPercentageHelper', function (value) {
-      if (value) return `(${formattedData.Subsidio_Porcentaje}%)`;
-      else return '';
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('subsidioM3Helper', function (value) {
-      if (value) return `${formattedData.Subsidio_M3}m³`;
-      else return '';
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('cuotaHelper', function (value) {
-      if (value) return `Cuota: ${formattedData.Cuota_Actual}/${formattedData.Numero_Total_Cuotas}`;
-      else return '';
-    });
-
-    // Helper Function that checks if value exists
-    handlebars.registerHelper('deudaHelper', function (value) {
-      if (value) {
-        const number = parseFloat(formattedData.Deuda_Total);
-        const formattedNumber = number.toLocaleString('es-CL', {
-          style: 'currency',
-          currency: 'CLP',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
-        return `Deuda: ${formattedNumber}`;
-      } else return '';
-    });
-
+    formattedData['folio'] = Number(folio) + Number(formattedData['n#']) - 1;
+    formattedData['barCodeNumber'] =
+      String(folio).padStart(7, '0') +
+      String(formattedData['numeroCliente']).padStart(8, '0') +
+      String(formattedData['totalPagar']).padStart(8, '0');
     console.log(formattedData);
     const templateHtml = await fs.readFile(billHtmlTemplatePath, 'utf8');
-    const template = handlebars.compile(templateHtml);
+    const template = Handlebars.compile(templateHtml);
 
     const html = template(formattedData);
     await fs.writeFile(billHtmlPath, html);
