@@ -35,12 +35,10 @@ let folio;
 })();
 
 async function generatePDF(data) {
+  console.log(data);
   try {
     const formattedData = {};
-    // Object.keys(data).map(originalKey => {
-    //   const newKey = originalKey.replaceAll(' ', '_');
-    //   formattedData[newKey] = data[originalKey];
-    // });
+
     Object.keys(data).map(originalKey => {
       const newKey = originalKey
         .toLowerCase()

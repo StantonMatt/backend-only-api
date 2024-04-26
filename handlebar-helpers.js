@@ -1,6 +1,21 @@
 'use strict';
 const Handlebars = require('handlebars');
 
+function normalizeAndFormat(string) {
+  return string
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => {
+      if (index > 0 && word) {
+        return word[0].toUpperCase() + word.slice(1);
+      }
+      return word;
+    })
+    .join('');
+}
+
 function formatCurrency(inputValue) {
   try {
     if (!inputValue) return '';
@@ -28,18 +43,7 @@ function formatCurrencyWithSymbol(inputValue) {
 function omitTitleIfNil(originalTitle, options) {
   try {
     const context = options.data.root;
-    const formattedTitle = originalTitle
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .split(' ')
-      .map((word, index) => {
-        if (index > 0 && word) {
-          return word[0].toUpperCase() + word.slice(1);
-        }
-        return word;
-      })
-      .join('');
+    const formattedTitle = normalizeAndFormat(originalTitle);
     if (!context[`${formattedTitle}`]) return '';
     else return originalTitle;
   } catch (error) {
@@ -47,44 +51,22 @@ function omitTitleIfNil(originalTitle, options) {
   }
 }
 
-function omitValueIfNil(inputValue, options) {
+function omitValueIfNil(originalTitle, options) {
   try {
     const context = options.data.root;
-    const formattedString = inputValue
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .split(' ')
-      .map((word, index) => {
-        if (index > 0 && word) {
-          return word[0].toUpperCase() + word.slice(1);
-        }
-        return word;
-      })
-      .join('');
-    if (!context[`${formattedString}`]) return '';
-    else return context[`${formattedString}`];
+    const formattedTitle = normalizeAndFormat(originalTitle);
+    if (!context[`${formattedTitle}`]) return '';
+    else return context[`${formattedTitle}`];
   } catch (error) {
     console.error(`ERROR: omitValueIfNil: ${error}`);
   }
 }
 
-function addSpaceIfNotNil(inputValue, options) {
+function addSpaceIfNotNil(originalTitle, options) {
   try {
     const context = options.data.root;
-    const formattedString = inputValue
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .split(' ')
-      .map((word, index) => {
-        if (index > 0 && word) {
-          return word[0].toUpperCase() + word.slice(1);
-        }
-        return word;
-      })
-      .join('');
-    if (!context[`${formattedString}`]) return '';
+    const formattedTitle = normalizeAndFormat(originalTitle);
+    if (!context[`${formattedTitle}`]) return '';
     else return new Handlebars.SafeString('&nbsp;');
   } catch (error) {
     console.error(`ERROR: addSpaceIfNotNil: ${error}`);
