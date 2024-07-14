@@ -7,7 +7,7 @@ const paths = require('./paths.js');
 
 const signedBoletaDteFolderPath = paths.getSignedBoletaDteFolderPath();
 const timbresBoletaFolderPath = paths.getTimbresBoletaFolderPath();
-const barrasBoletaFolderPath = paths.getBarrasBoletaFolderPath();
+const barrasBoletaFolderPath = paths.getBarCodesBoletaFolderPath();
 
 async function generateBarcodes() {
   try {

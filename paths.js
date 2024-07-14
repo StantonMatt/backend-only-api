@@ -28,7 +28,7 @@ const getUnsignedBoletaDteFolderPath = () => path.join(__dirname, 'public', 'out
 
 const getTimbresBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'timbres');
 
-const getBarrasBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'barras');
+const getBarCodesBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'barras');
 
 const getGraphsBoletaFolderPath = () => path.join(__dirname, 'public', 'output', 'boletas', 'images', 'graphs');
 
@@ -43,7 +43,7 @@ const getRcofXmlPath = () => path.join(__dirname, 'public', 'output', 'boletas',
 
 const getCaf39PrivateKeyPath = () => path.join(__dirname, 'public', 'keys', 'caf39.key');
 
-const getCaf39Path = () => path.join(__dirname, 'public', 'read-values', 'boletas', 'CAFAGRICOLA.xml');
+const getCaf39Path = () => path.join(__dirname, 'public', 'read-values', 'boletas', 'CAFCOABPRUEBA.xml');
 
 const getPrimerFolioDisponiblePath = () => path.join(__dirname, 'public', 'read-values', 'boletas', 'primer_folio_disponible.txt');
 
@@ -71,7 +71,7 @@ module.exports = {
   getSignedBoletaDteFolderPath,
   getUnsignedBoletaDteFolderPath,
   getTimbresBoletaFolderPath,
-  getBarrasBoletaFolderPath,
+  getBarCodesBoletaFolderPath,
   getGraphsBoletaFolderPath,
   getSobreBoletaFolderPath,
   getPDFBoletaFolderPath,

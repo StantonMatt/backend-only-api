@@ -22,8 +22,9 @@ const unsignedBoletaDtePath = paths.getUnsignedBoletaDteFolderPath();
 const sobreBoletaPath = paths.getSobreBoletaFolderPath();
 const timbresBoletaFolderPath = paths.getTimbresBoletaFolderPath();
 const boletaSobreFolderPath = paths.getSobreBoletaFolderPath();
+const barCodesBoletaFolderPath = paths.getBarCodesBoletaFolderPath();
 
-const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath];
+const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath, barCodesBoletaFolderPath];
 
 const express = require('express');
 const app = express();
@@ -34,6 +35,13 @@ app.use(cors());
 app.use('/files', express.static('public'));
 
 app.use(express.json());
+
+app.get('/api/generate-barcodes', async (req, res) => {
+  await buildClientDte();
+  await compileAndSignSobre();
+  const logGenerateBarcodes = await generateBarcodes();
+  res.send(logGenerateBarcodes);
+});
 
 app.post('/api/process-data', async (req, res) => {
   res.json(req.body);
@@ -104,11 +112,6 @@ app.get('/api/generate-sobre', async (req, res) => {
 app.get('/api/generate-rcof', async (req, res) => {
   const logBuildRcof = await buildRcof();
   res.send(logBuildRcof);
-});
-
-app.get('/api/generate-barcodes', async (req, res) => {
-  const logGenerateBarcodes = await generateBarcodes();
-  res.send(logGenerateBarcodes);
 });
 
 app.get('/api/download-sobre', async (req, res) => {

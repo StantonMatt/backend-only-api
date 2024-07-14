@@ -41,7 +41,7 @@ function getDteFormattedDate(date) {
 
 function getTedFormattedTimeStamp() {
   const tedDate = new Date();
-  if (tedDate.getDate() > 10 && tedDate.getDate() <= 20) tedDate.setDate(10);
+  if (tedDate.getDate() >= 10 && tedDate.getDate() <= 20) tedDate.setDate(9);
   const date = new Intl.DateTimeFormat('sv-SE', {
     dateStyle: 'short',
     timeZone: 'America/Santiago',

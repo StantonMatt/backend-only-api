@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@chilkat/ck-node20-win64": "^9.5098.0",
     "axios": "^1.6.8",
     "bwip-js": "^4.3.2",
     "chart.js": "^3.9.1",

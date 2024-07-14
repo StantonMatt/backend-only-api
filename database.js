@@ -3,7 +3,7 @@
 const XLSX = require('xlsx');
 const path = require('path');
 
-const mainFileName = '02-2024 PLANILLA vencto 20-03-2024';
+const mainFileName = '06-2024 PLANILLA vencto 20-07-2024';
 const testFileName = 'test';
 
 async function getSheetData(fileName) {

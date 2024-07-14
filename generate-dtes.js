@@ -90,16 +90,16 @@ async function buildClientDte() {
     let montoIvaBoletas = 0;
     let montoExentoBoletas = 0;
 
-    const rutEmisor = String(excelDataObject[1][cN().rutEmisor]).toUpperCase().trim();
-    const rznSocEmisor = String(excelDataObject[1][cN().rznSocEmisor]).split(/\s+/).join(' ').trim().slice(0, 100);
-    const giroEmisor = String(excelDataObject[1][cN().giroEmisor]).split(/\s+/).join(' ').trim().slice(0, 80);
+    const rutEmisor = String(excelDataObject[0][cN().rutEmisor]).toUpperCase().trim();
+    const rznSocEmisor = String(excelDataObject[0][cN().rznSocEmisor]).split(/\s+/).join(' ').trim().slice(0, 100);
+    const giroEmisor = String(excelDataObject[0][cN().giroEmisor]).split(/\s+/).join(' ').trim().slice(0, 80);
     const tipoDte = 39;
-    const indServicio = excelDataObject[1][cN().indServicio];
+    const indServicio = excelDataObject[0][cN().indServicio];
     const rutProvSw = rutEmisor;
-    const rutEnvia = String(excelDataObject[1][cN().rutEnvia]).toUpperCase().trim();
-    const rutReceptor = String(excelDataObject[1][cN().rutReceptor]).toUpperCase().trim();
-    const fchResol = String(excelDataObject[1][cN().fchResol]).toUpperCase().trim();
-    const nroResol = excelDataObject[1][cN().nroResol];
+    const rutEnvia = String(excelDataObject[0][cN().rutEnvia]).toUpperCase().trim();
+    const rutReceptor = String(excelDataObject[0][cN().rutReceptor]).toUpperCase().trim();
+    const fchResol = String(excelDataObject[0][cN().fchResol]).toUpperCase().trim();
+    const nroResol = excelDataObject[0][cN().nroResol];
     const periodoDesde = getDesdeDteFormattedDate();
     const periodoHasta = getHastaDteFormattedDate();
     const fchEmis = getIssueDteFormattedDate();
@@ -117,7 +117,7 @@ async function buildClientDte() {
     const logNroTotalBoletas = `Processing ${nroTotalBoletas} boletas...`;
     console.log(logNroTotalBoletas);
 
-    const nroBoletas = 30; // REMOVE
+    const nroBoletas = nroTotalBoletas; // REMOVE
     for (let i = 0; i < nroBoletas; i++) {
       if (excelDataObject[i][cN().isFactura]) continue;
       dtePath = path.join(__dirname, 'public', 'output', 'boletas', 'dtes', 'unsigned', `dte${currentBoleta}.xml`);
