@@ -1,21 +1,31 @@
 'use strict';
 
-const XLSX = require('xlsx');
+// const XLSX = require('xlsx');
 const path = require('path');
+const fs = require('fs-extra');
 
-const mainFileName = '06-2024 PLANILLA vencto 20-07-2024';
-const testFileName = 'test';
+// const mainFileName = '06-2024 PLANILLA vencto 20-07-2024';
+// const testFileName = 'test';
 
-async function getSheetData(fileName) {
+async function getSheetData() {
   try {
-    if (fileName === 0) fileName = mainFileName;
-    if (fileName === 1) fileName = testFileName;
-    const excelDataPath = path.join(__dirname, 'database', fileName + '.xlsx');
-    const workbook = XLSX.readFile(excelDataPath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+    // if (fileName === 0) fileName = mainFileName;
+    // if (fileName === 1) fileName = testFileName;
+    // const excelDataPath = path.join(__dirname, 'database', fileName + '.xlsx');
+    // const workbook = XLSX.readFile(excelDataPath);
+    // const sheetName = workbook.SheetNames[0];
+    // const worksheet = workbook.Sheets[sheetName];
+    // return XLSX.utils.sheet_to_json(worksheet);
 
-    return XLSX.utils.sheet_to_json(worksheet);
+    const jsonDataPath = path.join(__dirname, 'database', `planilla.json`);
+
+    // Read the JSON file
+    const jsonData = await fs.readFile(jsonDataPath, 'utf8');
+
+    // Parse the JSON data
+    const sheetData = JSON.parse(jsonData);
+
+    return sheetData;
   } catch (error) {
     console.error('Error reading the XLSX file:', error);
   }
@@ -23,7 +33,7 @@ async function getSheetData(fileName) {
 
 async function getCompanyData() {
   try {
-    const excelDataObject = await getSheetData(mainFileName);
+    const excelDataObject = await getSheetData();
     return {
       rutProvSw: String(excelDataObject[0][cN().rutEmisor]).toUpperCase().trim(),
       rutEmisor: String(excelDataObject[0][cN().rutEmisor]).toUpperCase().trim(),

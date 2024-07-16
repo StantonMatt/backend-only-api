@@ -2,6 +2,9 @@
 
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const archiver = require('archiver');
+const XLSX = require('xlsx');
 const fs = require('fs-extra');
 
 const main = require('./app.js');
@@ -31,10 +34,46 @@ const app = express();
 const port = 5000;
 
 app.use(cors());
-
 app.use('/files', express.static('public'));
-
 app.use(express.json());
+
+// Configure multer for file upload
+const upload = multer({ dest: 'uploads/' });
+
+app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded.');
+    }
+
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = req.body.sheet;
+
+    if (!workbook.SheetNames.includes(sheetName)) {
+      return res.status(400).send('Selected sheet not found in the workbook.');
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+    // Process the data as needed
+    // For now, we'll just save it to a JSON file
+    const outputPath = path.join(__dirname, 'database', `planilla.json`);
+    await fs.outputJSON(outputPath, jsonData, { spaces: 2 });
+
+    // Clean up the uploaded file
+    await fs.remove(req.file.path);
+
+    res.status(200).send({
+      message: 'File processed successfully',
+      sheet: sheetName,
+      rowCount: jsonData.length,
+    });
+  } catch (error) {
+    console.error('Error processing Excel file:', error);
+    res.status(500).send(`Error processing file: ${error.message}`);
+  }
+});
 
 app.get('/api/generate-barcodes', async (req, res) => {
   await buildClientDte();
@@ -121,20 +160,38 @@ app.get('/api/download-sobre', async (req, res) => {
       res.status(404).send('No files found in the directory');
       return;
     }
-    // Sort files by modification time
-    const sortedFiles = await Promise.all(
-      sobreFiles.map(async file => {
+
+    if (sobreFiles.length === 1) {
+      // If there's only one file, send it directly
+      res.download(path.join(boletaSobreFolderPath, sobreFiles[0]));
+    } else {
+      // If there are multiple files, create a zip
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': 'attachment; filename=sobre_COAB.zip',
+      });
+
+      const archive = archiver('zip', {
+        zlib: { level: 9 }, // Sets the compression level
+      });
+
+      archive.on('error', function (err) {
+        res.status(500).send({ error: err.message });
+      });
+
+      // pipe archive data to the response
+      archive.pipe(res);
+
+      for (const file of sobreFiles) {
         const filePath = path.join(boletaSobreFolderPath, file);
-        const stats = await fs.stat(filePath);
-        return { file, time: stats.mtime.getTime() };
-      })
-    );
-    sortedFiles.sort((a, b) => b.time - a.time);
-    const latestSobre = sortedFiles[0].file;
-    res.download(path.join(boletaSobreFolderPath, latestSobre));
+        archive.file(filePath, { name: file });
+      }
+
+      await archive.finalize();
+    }
   } catch (error) {
     console.error(`ERROR: Failed to download sobre: ${error}`);
-    res.status(500).send(`Error downloading the file: ${error.message}`);
+    res.status(500).send(`Error downloading the file(s): ${error.message}`);
   }
 });
 
