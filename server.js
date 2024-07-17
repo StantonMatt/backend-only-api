@@ -26,6 +26,10 @@ const sobreBoletaPath = paths.getSobreBoletaFolderPath();
 const timbresBoletaFolderPath = paths.getTimbresBoletaFolderPath();
 const boletaSobreFolderPath = paths.getSobreBoletaFolderPath();
 const barCodesBoletaFolderPath = paths.getBarCodesBoletaFolderPath();
+const fechaFirmaTxtPath = paths.getFechaFirmaTxtPath();
+const fechaEmisionTxtPath = paths.getFechaEmisionTxtPath();
+const fechaVencimientoTxtPath = paths.getFechaVencimientoTxtPath();
+const databaseJsonPath = paths.getDatabaseJsonPath();
 
 const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath, barCodesBoletaFolderPath];
 
@@ -48,6 +52,9 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
 
     const workbook = XLSX.readFile(req.file.path);
     const sheetName = req.body.sheet;
+    const fechaFirma = req.body.fechaFirma;
+    const fechaEmision = req.body.fechaEmision;
+    const fechaVencimiento = req.body.fechaVencimiento;
 
     if (!workbook.SheetNames.includes(sheetName)) {
       return res.status(400).send('Selected sheet not found in the workbook.');
@@ -58,8 +65,11 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
 
     // Process the data as needed
     // For now, we'll just save it to a JSON file
-    const outputPath = path.join(__dirname, 'database', `planilla.json`);
-    await fs.outputJSON(outputPath, jsonData, { spaces: 2 });
+    await fs.outputJSON(databaseJsonPath, jsonData, { spaces: 2 });
+
+    await fs.outputFile(fechaFirmaTxtPath, fechaFirma);
+    await fs.outputFile(fechaEmisionTxtPath, fechaEmision);
+    await fs.outputFile(fechaVencimientoTxtPath, fechaVencimiento);
 
     // Clean up the uploaded file
     await fs.remove(req.file.path);

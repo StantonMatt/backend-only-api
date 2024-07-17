@@ -1,5 +1,12 @@
 'use strict';
 
+const fs = require('fs-extra');
+const paths = require('./paths');
+
+const fechaFirmaTxtPath = paths.getFechaFirmaTxtPath();
+const fechaEmisionTxtPath = paths.getFechaEmisionTxtPath();
+const fechaVencimientoTxtPath = paths.getFechaVencimientoTxtPath();
+
 function getTodayDteFormattedDate() {
   return getDteFormattedDate(new Date());
 }
@@ -19,17 +26,19 @@ function getHastaDteFormattedDate() {
   return getDteFormattedDate(hastaDate);
 }
 function getExpiryDteFormattedDate() {
-  const expiryDate = new Date();
-  if (expiryDate.getDate() > 20) expiryDate.setMonth(expiryDate.getMonth() + 1);
-  expiryDate.setDate(20);
-  return getDteFormattedDate(expiryDate);
+  // const expiryDate = new Date();
+  // if (expiryDate.getDate() > 20) expiryDate.setMonth(expiryDate.getMonth() + 1);
+  // expiryDate.setDate(20);
+  // return getDteFormattedDate(expiryDate);
+  return fs.readFileSync(fechaVencimientoTxtPath, 'utf8');
 }
 
 function getIssueDteFormattedDate() {
-  const issueDate = new Date();
-  if (issueDate.getDate() > 20) issueDate.setMonth(issueDate.getMonth() + 1);
-  issueDate.setDate(0);
-  return getDteFormattedDate(issueDate);
+  // const issueDate = new Date();
+  // if (issueDate.getDate() > 20) issueDate.setMonth(issueDate.getMonth() + 1);
+  // issueDate.setDate(0);
+  // return getDteFormattedDate(issueDate);
+  return fs.readFileSync(fechaEmisionTxtPath, 'utf8');
 }
 
 function getDteFormattedDate(date) {
@@ -41,11 +50,12 @@ function getDteFormattedDate(date) {
 
 function getTedFormattedTimeStamp() {
   const tedDate = new Date();
-  if (tedDate.getDate() >= 10 && tedDate.getDate() <= 20) tedDate.setDate(9);
-  const date = new Intl.DateTimeFormat('sv-SE', {
-    dateStyle: 'short',
-    timeZone: 'America/Santiago',
-  }).format(tedDate);
+  // if (tedDate.getDate() >= 10 && tedDate.getDate() <= 20) tedDate.setDate(9);
+  // const date = new Intl.DateTimeFormat('sv-SE', {
+  //   dateStyle: 'short',
+  //   timeZone: 'America/Santiago',
+  // }).format(tedDate);
+  const date = fs.readFileSync(fechaFirmaTxtPath, 'utf8');
   const time = new Intl.DateTimeFormat('sv-SE', {
     timeStyle: 'medium',
     timeZone: 'America/Santiago',
@@ -59,10 +69,10 @@ function getFormattedTimeStamp() {
   const hour = String(today.getHours()).padStart(2, 0);
   const minutes = String(today.getMinutes()).padStart(2, 0);
   const seconds = String(today.getSeconds()).padStart(2, 0);
-  const time = new Intl.DateTimeFormat('sv-SE', {
-    timeStyle: 'medium',
-    timeZone: 'America/Santiago',
-  }).format(today);
+  // const time = new Intl.DateTimeFormat('sv-SE', {
+  //   timeStyle: 'medium',
+  //   timeZone: 'America/Santiago',
+  // }).format(today);
   return `${date}T${hour}_${minutes}_${seconds}`;
 }
 

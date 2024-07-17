@@ -1,7 +1,16 @@
 'use strict';
 
 const path = require('path');
-const { getFormattedTimeStamp } = require('./util-date');
+
+const getDatabaseFolderPath = () => path.join(__dirname, 'database');
+
+const getDatabaseJsonPath = () => path.join(__dirname, 'database', 'planilla.json');
+
+const getFechaFirmaTxtPath = () => path.join(__dirname, 'database', 'fecha_firma.txt');
+
+const getFechaEmisionTxtPath = () => path.join(__dirname, 'database', 'fecha_Emision.txt');
+
+const getFechaVencimientoTxtPath = () => path.join(__dirname, 'database', 'fecha_Vencimiento.txt');
 
 const getPrivateKeyPath = () => path.join(__dirname, 'public', 'keys', 'private_key.pem');
 
@@ -88,4 +97,21 @@ module.exports = {
   getMontoIvaBoletasPath,
   getMontoExentoBoletasPath,
   getMontoTotalBoletasPath,
+  getDatabaseFolderPath,
+  getDatabaseJsonPath,
+  getFechaFirmaTxtPath,
+  getFechaEmisionTxtPath,
+  getFechaVencimientoTxtPath,
 };
+
+function getFormattedTimeStamp() {
+  const today = new Date();
+  const date = new Intl.DateTimeFormat('sv-SE', {
+    dateStyle: 'short',
+    timeZone: 'America/Santiago',
+  }).format(today);
+  const hour = String(today.getHours()).padStart(2, 0);
+  const minutes = String(today.getMinutes()).padStart(2, 0);
+  const seconds = String(today.getSeconds()).padStart(2, 0);
+  return `${date}T${hour}_${minutes}_${seconds}`;
+}
