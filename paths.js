@@ -8,9 +8,9 @@ const getDatabaseJsonPath = () => path.join(__dirname, 'database', 'planilla.jso
 
 const getFechaFirmaTxtPath = () => path.join(__dirname, 'database', 'fecha_firma.txt');
 
-const getFechaEmisionTxtPath = () => path.join(__dirname, 'database', 'fecha_Emision.txt');
+const getFechaEmisionTxtPath = () => path.join(__dirname, 'database', 'fecha_emision.txt');
 
-const getFechaVencimientoTxtPath = () => path.join(__dirname, 'database', 'fecha_Vencimiento.txt');
+const getFechaVencimientoTxtPath = () => path.join(__dirname, 'database', 'fecha_vencimiento.txt');
 
 const getPrivateKeyPath = () => path.join(__dirname, 'public', 'keys', 'private_key.pem');
 

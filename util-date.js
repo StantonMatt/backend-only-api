@@ -12,16 +12,34 @@ function getTodayDteFormattedDate() {
 }
 
 function getDesdeDteFormattedDate() {
-  const desdeDate = new Date();
-  if (desdeDate.getDate() <= 20) desdeDate.setMonth(desdeDate.getMonth() - 2);
-  else desdeDate.setMonth(desdeDate.getMonth() - 1);
+  // const desdeDate = new Date();
+  // if (desdeDate.getDate() <= 20) desdeDate.setMonth(desdeDate.getMonth() - 2);
+  // else desdeDate.setMonth(desdeDate.getMonth() - 1);
+  // desdeDate.setDate(25);
+  // return getDteFormattedDate(desdeDate);
+  const fechaVencimiento = fs.readFileSync(fechaVencimientoTxtPath, 'utf8');
+  const desdeDate = new Date(fechaVencimiento);
+  if (desdeDate.getDate() < 10) {
+    desdeDate.setMonth(desdeDate.getMonth() - 3);
+  } else {
+    desdeDate.setMonth(desdeDate.getMonth() - 2);
+  }
   desdeDate.setDate(25);
   return getDteFormattedDate(desdeDate);
 }
 
 function getHastaDteFormattedDate() {
-  const hastaDate = new Date();
-  if (hastaDate.getDate() <= 20) hastaDate.setMonth(hastaDate.getMonth() - 1);
+  // const hastaDate = new Date();
+  // if (hastaDate.getDate() <= 20) hastaDate.setMonth(hastaDate.getMonth() - 1);
+  // hastaDate.setDate(24);
+  // return getDteFormattedDate(hastaDate);
+  const fechaVencimiento = fs.readFileSync(fechaVencimientoTxtPath, 'utf8');
+  const hastaDate = new Date(fechaVencimiento);
+  if (hastaDate.getDate() < 10) {
+    hastaDate.setMonth(hastaDate.getMonth() - 2);
+  } else {
+    hastaDate.setMonth(hastaDate.getMonth() - 1);
+  }
   hastaDate.setDate(24);
   return getDteFormattedDate(hastaDate);
 }
