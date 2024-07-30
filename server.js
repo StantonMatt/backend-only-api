@@ -29,6 +29,8 @@ const barCodesBoletaFolderPath = paths.getBarCodesBoletaFolderPath();
 const fechaFirmaTxtPath = paths.getFechaFirmaTxtPath();
 const fechaEmisionTxtPath = paths.getFechaEmisionTxtPath();
 const fechaVencimientoTxtPath = paths.getFechaVencimientoTxtPath();
+const fechaDesdeTxtPath = paths.getFechaDesdeTxtPath();
+const fechaHastaTxtPath = paths.getFechaHastaTxtPath();
 const databaseJsonPath = paths.getDatabaseJsonPath();
 
 const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath, barCodesBoletaFolderPath];
@@ -55,6 +57,8 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
     const fechaFirma = req.body.fechaFirma;
     const fechaEmision = req.body.fechaEmision;
     const fechaVencimiento = req.body.fechaVencimiento;
+    const fechaDesde = req.body.fechaDesde;
+    const fechaHasta = req.body.fechaHasta;
 
     if (!workbook.SheetNames.includes(sheetName)) {
       return res.status(400).send('Selected sheet not found in the workbook.');
@@ -70,12 +74,14 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
     await fs.outputFile(fechaFirmaTxtPath, fechaFirma);
     await fs.outputFile(fechaEmisionTxtPath, fechaEmision);
     await fs.outputFile(fechaVencimientoTxtPath, fechaVencimiento);
+    await fs.outputFile(fechaDesdeTxtPath, fechaDesde);
+    await fs.outputFile(fechaHastaTxtPath, fechaHasta);
 
     // Clean up the uploaded file
     await fs.remove(req.file.path);
 
     res.status(200).send({
-      message: 'File processed successfully',
+      message: `${sheetName} sheet processed successfully `,
       sheet: sheetName,
       rowCount: jsonData.length,
     });
@@ -140,21 +146,28 @@ app.get('/api/generate-dtes', async (req, res) => {
 
 app.get('/api/generate-sobre', async (req, res) => {
   const logOutput = [];
-  const log1 = `Checking for unsigned files...`;
-  const fileExists = await checkFileExists(unsignedBoletaDtePath + '\\dte1.xml');
-  logOutput.push(log1);
-  if (fileExists) {
-    const log2 = 'Files found...';
-    await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml');
-    const log3 = 'Files ready to sign';
-    const log4 = await compileAndSignSobre();
+  try {
+    const filePath = path.join(unsignedBoletaDtePath, 'dte1.xml');
+    const fileExists = await checkFileExists(filePath);
 
-    logOutput.push(log2, log3, log4);
-    res.send(logOutput);
-  } else {
-    const logError = `File exists: ${fileExists}`;
-    logOutput.push(logError);
-    res.send(logOutput);
+    console.log(fileExists);
+    if (!fileExists) {
+      logOutput.push(`File does not exist: ${filePath}`);
+      return res.status(404).json({ success: false, logOutput });
+    }
+
+    await waitForFileReady(filePath);
+
+    const signResult = await compileAndSignSobre();
+    logOutput.push(`${signResult.length} sobres generated successfully:`);
+    signResult.forEach(element => {
+      logOutput.push(element);
+    });
+
+    res.status(200).json({ success: true, logOutput });
+  } catch (error) {
+    logOutput.push(`Error: ${error.message}`);
+    res.status(500).json({ success: false, logOutput });
   }
 });
 

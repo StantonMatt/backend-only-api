@@ -11,7 +11,7 @@ const dllPath = paths.getDllPath();
 async function compileAndSignSobre() {
   try {
     const { stdout, stderr } = await execAsync(`dotnet ${dllPath}`);
-    let logCompileAndSignSobre = `MakeEnvio.cs console logs:\n ${stdout}`;
+    let logCompileAndSignSobre = stdout.trim().split('\n');
     console.log(logCompileAndSignSobre);
     if (stderr) {
       logCompileAndSignSobre = `ERROR MakeEnvio.cs logs:\n ${stderr}`;

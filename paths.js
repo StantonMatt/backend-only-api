@@ -12,6 +12,10 @@ const getFechaEmisionTxtPath = () => path.join(__dirname, 'database', 'fecha_emi
 
 const getFechaVencimientoTxtPath = () => path.join(__dirname, 'database', 'fecha_vencimiento.txt');
 
+const getFechaDesdeTxtPath = () => path.join(__dirname, 'database', 'fecha_desde.txt');
+
+const getFechaHastaTxtPath = () => path.join(__dirname, 'database', 'fecha_hasta.txt');
+
 const getPrivateKeyPath = () => path.join(__dirname, 'public', 'keys', 'private_key.pem');
 
 const getPublicCertPath = () => path.join(__dirname, 'public', 'keys', 'certificate.pem');
@@ -102,6 +106,8 @@ module.exports = {
   getFechaFirmaTxtPath,
   getFechaEmisionTxtPath,
   getFechaVencimientoTxtPath,
+  getFechaDesdeTxtPath,
+  getFechaHastaTxtPath,
 };
 
 function getFormattedTimeStamp() {
