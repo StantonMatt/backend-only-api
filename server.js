@@ -6,6 +6,7 @@ const multer = require('multer');
 const archiver = require('archiver');
 const XLSX = require('xlsx');
 const fs = require('fs-extra');
+const express = require('express');
 
 const main = require('./app.js');
 const paths = require('./paths.js');
@@ -17,9 +18,12 @@ const { compileAndSignSobre } = require('./generate-sobre.js');
 const { generatePDF } = require('./generate-pdf.js');
 const { generateChart } = require('./generate-chart.js');
 
-const pdfPath = paths.getPDFBoletaFolderPath();
-const pdfFilePath = path.join(pdfPath + '/Utility-Bil.pdf');
+const app = express();
+const port = 5000;
 
+// Path constants
+const pdfPath = paths.getPDFBoletaFolderPath();
+const pdfFilePath = path.join(pdfPath, 'Utility-Bil.pdf');
 const signedBoletaDtePath = paths.getSignedBoletaDteFolderPath();
 const unsignedBoletaDtePath = paths.getUnsignedBoletaDteFolderPath();
 const sobreBoletaPath = paths.getSobreBoletaFolderPath();
@@ -35,10 +39,7 @@ const databaseJsonPath = paths.getDatabaseJsonPath();
 
 const foldersToDelete = [sobreBoletaPath, signedBoletaDtePath, unsignedBoletaDtePath, timbresBoletaFolderPath, barCodesBoletaFolderPath];
 
-const express = require('express');
-const app = express();
-const port = 5000;
-
+// Middleware
 app.use(cors());
 app.use('/files', express.static('public'));
 app.use(express.json());
@@ -46,6 +47,7 @@ app.use(express.json());
 // Configure multer for file upload
 const upload = multer({ dest: 'uploads/' });
 
+// Routes
 app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -67,8 +69,6 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    // Process the data as needed
-    // For now, we'll just save it to a JSON file
     await fs.outputJSON(databaseJsonPath, jsonData, { spaces: 2 });
 
     await fs.outputFile(fechaFirmaTxtPath, fechaFirma);
@@ -77,7 +77,6 @@ app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
     await fs.outputFile(fechaDesdeTxtPath, fechaDesde);
     await fs.outputFile(fechaHastaTxtPath, fechaHasta);
 
-    // Clean up the uploaded file
     await fs.remove(req.file.path);
 
     res.status(200).send({
@@ -150,7 +149,6 @@ app.get('/api/generate-sobre', async (req, res) => {
     const filePath = path.join(unsignedBoletaDtePath, 'dte1.xml');
     const fileExists = await checkFileExists(filePath);
 
-    console.log(fileExists);
     if (!fileExists) {
       logOutput.push(`File does not exist: ${filePath}`);
       return res.status(404).json({ success: false, logOutput });
@@ -185,24 +183,21 @@ app.get('/api/download-sobre', async (req, res) => {
     }
 
     if (sobreFiles.length === 1) {
-      // If there's only one file, send it directly
       res.download(path.join(boletaSobreFolderPath, sobreFiles[0]));
     } else {
-      // If there are multiple files, create a zip
       res.writeHead(200, {
         'Content-Type': 'application/zip',
         'Content-Disposition': 'attachment; filename=sobre_COAB.zip',
       });
 
       const archive = archiver('zip', {
-        zlib: { level: 9 }, // Sets the compression level
+        zlib: { level: 9 },
       });
 
       archive.on('error', function (err) {
         res.status(500).send({ error: err.message });
       });
 
-      // pipe archive data to the response
       archive.pipe(res);
 
       for (const file of sobreFiles) {
@@ -218,28 +213,53 @@ app.get('/api/download-sobre', async (req, res) => {
   }
 });
 
+// New endpoint for fetching dropdown options
+app.get('/api/get-dropdown-options/:fieldName', async (req, res) => {
+  const { fieldName } = req.params;
+  const optionsPath = path.join(__dirname, 'public', 'read-values', 'boletas', 'options', `${fieldName}.txt`);
+
+  try {
+    if (!(await fs.pathExists(optionsPath))) {
+      return res.status(404).json({ error: `Options file for ${fieldName} not found` });
+    }
+
+    const optionsContent = await fs.readFile(optionsPath, 'utf-8');
+    const options = optionsContent
+      .split('\n')
+      .map(option => option.trim())
+      .filter(Boolean);
+
+    res.json(options);
+  } catch (error) {
+    console.error(`Error reading options for ${fieldName}:`, error);
+    res.status(500).json({ error: `Failed to fetch options for ${fieldName}` });
+  }
+});
+
+// Start the server
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 
+// Run function (if needed)
 async function run() {
   try {
     await clearOldFiles(foldersToDelete);
-    const semillaData = await getSemilla();
-    const semilla = await processSemillaResponse(semillaData);
-    const semillaXml = await createSemillaXml(semilla);
-    const signedSemillaXml = await signSemillaXml(semillaXml);
-    const tokenData = await getToken(signedSemillaXml);
-    await processTokenResponse(tokenData);
-    await generateDteXmls();
-    await waitForFileReady(unsignedBoletaDtePath + '\\dte1.xml'); // Ensure the file is ready before proceeding
+    const semillaData = await main.getSemilla();
+    const semilla = await main.processSemillaResponse(semillaData);
+    const semillaXml = await main.createSemillaXml(semilla);
+    const signedSemillaXml = await main.signSemillaXml(semillaXml);
+    const tokenData = await main.getToken(signedSemillaXml);
+    await main.processTokenResponse(tokenData);
+    await buildClientDte();
+    await waitForFileReady(path.join(unsignedBoletaDtePath, 'dte1.xml'));
     await compileAndSignSobre();
     await buildRcof();
     await generateBarcodes();
-    // await postSignedSobreXml();
-    // await getStatus();
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);
-    // Handle the error appropriately, perhaps by retrying or aborting the process
   }
 }
+
+// Uncomment the following line if you want to run the function when the server starts
+// run();
